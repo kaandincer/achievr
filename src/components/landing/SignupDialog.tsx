@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { create } from "zustand";
@@ -26,13 +27,14 @@ export const useSignupDialog = create<SignupDialogStore>((set) => ({
 export const SignupDialog = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [excitement, setExcitement] = useState("");
   const { toast } = useToast();
   const { isOpen, closeSignupDialog } = useSignupDialog();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would typically send this to your backend
-    console.log("Submitted:", { name, email });
+    console.log("Submitted:", { name, email, excitement });
     toast({
       title: "Thanks for signing up!",
       description: "We'll notify you as soon as Achievr launches.",
@@ -40,6 +42,7 @@ export const SignupDialog = () => {
     closeSignupDialog();
     setEmail("");
     setName("");
+    setExcitement("");
   };
 
   return (
@@ -75,6 +78,19 @@ export const SignupDialog = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="excitement" className="text-sm font-medium">
+              What excites you most about Achievr?
+            </label>
+            <Textarea
+              id="excitement"
+              placeholder="Share what brings you to Achievr..."
+              value={excitement}
+              onChange={(e) => setExcitement(e.target.value)}
+              className="min-h-[100px]"
               required
             />
           </div>
