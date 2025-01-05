@@ -9,17 +9,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { create } from "zustand";
 
-export const SignupDialog = ({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) => {
+interface SignupDialogStore {
+  isOpen: boolean;
+  openSignupDialog: () => void;
+  closeSignupDialog: () => void;
+}
+
+export const useSignupDialog = create<SignupDialogStore>((set) => ({
+  isOpen: false,
+  openSignupDialog: () => set({ isOpen: true }),
+  closeSignupDialog: () => set({ isOpen: false }),
+}));
+
+export const SignupDialog = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const { toast } = useToast();
+  const { isOpen, closeSignupDialog } = useSignupDialog();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,15 +35,15 @@ export const SignupDialog = ({
     console.log("Submitted:", { name, email });
     toast({
       title: "Thanks for signing up!",
-      description: "We'll notify you as soon as DailyWinz launches.",
+      description: "We'll notify you as soon as Achievr launches.",
     });
-    onOpenChange(false);
+    closeSignupDialog();
     setEmail("");
     setName("");
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={closeSignupDialog}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl">Join the Waitlist</DialogTitle>
