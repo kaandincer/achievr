@@ -1,10 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignupDialog } from "./SignupDialog";
-import { useState } from "react";
+import { useSignupDialog } from "./SignupDialog";
 
 export const Hero = () => {
-  const [showSignupDialog, setShowSignupDialog] = useState(false);
+  const { openSignupDialog } = useSignupDialog();
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -23,7 +22,7 @@ export const Hero = () => {
           <Button
             size="lg"
             className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
-            onClick={() => setShowSignupDialog(true)}
+            onClick={openSignupDialog}
           >
             Get Started
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -37,10 +36,6 @@ export const Hero = () => {
           </Button>
         </div>
       </div>
-      <SignupDialog
-        open={showSignupDialog}
-        onOpenChange={setShowSignupDialog}
-      />
     </section>
   );
 };
