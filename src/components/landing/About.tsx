@@ -15,10 +15,10 @@ export const About = () => {
           <div className="space-y-6 animate-fade-up">
             <h3 className="text-2xl font-bold text-sage-600">The Story Behind Achievr</h3>
             <p className="text-gray-600">
-              Achievr was born from a personal journey of understanding that the path to extraordinary achievements is paved with small, consistent steps. As someone who has always pursued ambitious goals, our founder recognized that the greatest challenge wasn't setting big goals—it was maintaining focus and momentum in the day-to-day journey toward them.
+              Achievr was born from our team's journey of understanding that the path to extraordinary achievements is paved with small, consistent steps. As a team who has always pursued ambitious goals, we recognized that the greatest challenge wasn't setting big goals—it was maintaining focus and momentum in the day-to-day journey toward them.
             </p>
             <p className="text-gray-600">
-              Through years of personal development and goal achievement, a powerful truth emerged: every monumental achievement is built upon a foundation of small, daily wins. This realization led to the creation of Achievr—a platform that combines the power of AI with proven goal-setting methodologies.
+              Through years of personal development and goal achievement, we discovered a powerful truth: every monumental achievement is built upon a foundation of small, daily wins. This realization led to the creation of Achievr—a platform that combines the power of AI with proven goal-setting methodologies.
             </p>
           </div>
 
