@@ -40,7 +40,7 @@ export const SignupDialog = ({
         <DialogHeader>
           <DialogTitle className="text-2xl">Join the Waitlist</DialogTitle>
           <DialogDescription className="text-lg">
-            Be among the first to experience DailyWinz when we launch!
+            Be among the first to experience Achievr when we launch!
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
