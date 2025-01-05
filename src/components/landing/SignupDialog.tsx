@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { create } from "zustand";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SignupDialogStore {
   isOpen: boolean;
@@ -28,21 +29,46 @@ export const SignupDialog = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [excitement, setExcitement] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { isOpen, closeSignupDialog } = useSignupDialog();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send this to your backend
-    console.log("Submitted:", { name, email, excitement });
-    toast({
-      title: "Thanks for signing up!",
-      description: "We'll notify you as soon as Achievr launches.",
-    });
-    closeSignupDialog();
-    setEmail("");
-    setName("");
-    setExcitement("");
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('signups')
+        .insert([
+          { 
+            "Name": name,
+            "Email": email,
+            "Why Achievr?": excitement 
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Thanks for signing up!",
+        description: "We'll notify you as soon as Achievr launches.",
+      });
+      
+      closeSignupDialog();
+      setEmail("");
+      setName("");
+      setExcitement("");
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,8 +122,9 @@ export const SignupDialog = () => {
           <Button
             type="submit"
             className="w-full bg-sage-500 hover:bg-sage-600 text-white"
+            disabled={isSubmitting}
           >
-            Join Waitlist
+            {isSubmitting ? "Signing up..." : "Join Waitlist"}
           </Button>
         </form>
       </DialogContent>
