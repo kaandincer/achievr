@@ -83,7 +83,7 @@ export const SignupDialog = () => {
           </div>
           <div className="space-y-2">
             <label htmlFor="excitement" className="text-sm font-medium">
-              What excites you most about Achievr?
+              What excites you most about Achievr? (Optional)
             </label>
             <Textarea
               id="excitement"
@@ -91,7 +91,6 @@ export const SignupDialog = () => {
               value={excitement}
               onChange={(e) => setExcitement(e.target.value)}
               className="min-h-[100px]"
-              required
             />
           </div>
           <Button
