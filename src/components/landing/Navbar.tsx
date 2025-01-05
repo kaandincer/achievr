@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Info, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useSignupDialog } from "@/components/landing/SignupDialog";
 
 export const Navbar = () => {
@@ -14,10 +14,6 @@ export const Navbar = () => {
             <span className="text-2xl font-bold text-sage-600">Achievr</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Info className="w-4 h-4" />
-              About
-            </Button>
             <Button size="sm" className="gap-2" onClick={openSignupDialog}>
               <ArrowRight className="w-4 h-4" />
               Get Started
