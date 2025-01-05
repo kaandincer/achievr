@@ -12,8 +12,8 @@ export const CTA = () => {
           Ready to Achieve Your Goals?
         </h2>
         <p className="text-gray-600 max-w-2xl mx-auto mb-8">
-          Join thousands of successful individuals who have transformed their lives
-          with our AI-powered accountability platform.
+          Be among the first to experience our AI-powered accountability platform
+          when we launch. Join our waitlist to stay updated!
         </p>
         <Button
           size="lg"
