@@ -20,7 +20,7 @@ export const CTA = () => {
           className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
           onClick={openSignupDialog}
         >
-          Start Your Journey
+          Join the Waitlist
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
