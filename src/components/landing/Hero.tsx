@@ -5,6 +5,13 @@ import { useSignupDialog } from "./SignupDialog";
 export const Hero = () => {
   const { openSignupDialog } = useSignupDialog();
 
+  const scrollToFeatures = () => {
+    const featuresSection = document.getElementById('features-section');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8" role="banner">
       <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-up">
@@ -32,6 +39,7 @@ export const Hero = () => {
             size="lg"
             variant="outline"
             className="border-sage-500 text-sage-600 hover:bg-sage-50"
+            onClick={scrollToFeatures}
             aria-label="Learn More about Achievr"
           >
             Learn More
