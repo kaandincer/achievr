@@ -29,14 +29,24 @@ const Goals = () => {
     }
 
     try {
+      console.log("Starting goal analysis...");
       // First, get AI analysis
       const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-goal', {
         body: { title, description },
       });
 
-      if (analysisError) throw analysisError;
-      setAnalysis(analysisData.analysis);
+      console.log("Analysis response:", analysisData, analysisError);
 
+      if (analysisError) {
+        console.error("Analysis error:", analysisError);
+        throw analysisError;
+      }
+
+      if (analysisData?.analysis) {
+        setAnalysis(analysisData.analysis);
+      }
+
+      console.log("Saving goal to database...");
       // Then, save the goal
       const { error: saveError } = await supabase
         .from("goals")
@@ -48,7 +58,12 @@ const Goals = () => {
           },
         ]);
 
-      if (saveError) throw saveError;
+      console.log("Save response:", saveError);
+
+      if (saveError) {
+        console.error("Save error:", saveError);
+        throw saveError;
+      }
 
       toast({
         title: "Success",
@@ -56,10 +71,11 @@ const Goals = () => {
       });
 
     } catch (error) {
+      console.error("Full error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create goal. Please try again.",
+        description: error.message || "Failed to create goal. Please try again.",
       });
     } finally {
       setIsAnalyzing(false);
