@@ -66,9 +66,6 @@ const Login = () => {
                 sign_up: {
                   password_label: 'Create Password',
                   password_input_placeholder: 'Create a password',
-                  confirm_password: 'Confirm Password',
-                  confirm_password_label: 'Confirm your password',
-                  confirm_password_input_placeholder: 'Enter your password again',
                   email_input_placeholder: 'Your email address',
                   email_label: 'Email address',
                   button_label: 'Create Account'
