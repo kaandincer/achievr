@@ -61,19 +61,21 @@ const Login = () => {
               },
             }}
             providers={[]}
-            view="sign_up"
             localization={{
               variables: {
                 sign_up: {
-                  email_label: 'Email address',
                   password_label: 'Create Password',
-                  email_input_placeholder: 'Your email address',
                   password_input_placeholder: 'Create a password',
-                  button_label: 'Create Account',
+                  confirm_password: 'Confirm Password',
+                  confirm_password_label: 'Confirm your password',
+                  confirm_password_input_placeholder: 'Enter your password again',
+                  email_input_placeholder: 'Your email address',
+                  email_label: 'Email address',
+                  button_label: 'Create Account'
                 },
                 sign_in: {
-                  email_label: 'Email address',
                   password_label: 'Your Password',
+                  email_label: 'Email address',
                   email_input_placeholder: 'Your email address',
                   button_label: 'Sign In'
                 }
