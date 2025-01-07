@@ -16,7 +16,7 @@ export const Navbar = () => {
           <div className="flex items-center gap-4">
             <Button size="sm" className="gap-2" onClick={openSignupDialog}>
               <ArrowRight className="w-4 h-4" />
-              Join the Waitlist
+              Get Started
             </Button>
           </div>
         </div>
