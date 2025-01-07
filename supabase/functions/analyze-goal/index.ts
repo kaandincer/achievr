@@ -38,6 +38,8 @@ serve(async (req) => {
           { role: 'system', content: 'You are a helpful goal-setting expert that provides constructive feedback and actionable advice.' },
           { role: 'user', content: prompt }
         ],
+        temperature: 0.7,
+        max_tokens: 1000
       }),
     });
 
