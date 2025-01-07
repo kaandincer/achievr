@@ -61,6 +61,8 @@ const Login = () => {
               },
             }}
             providers={[]}
+            showLinks={true}
+            view="sign_up"
             localization={{
               variables: {
                 sign_up: {
