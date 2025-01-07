@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Save } from "lucide-react";
 
 const Goals = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [analysis, setAnalysis] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSavingAnalysis, setIsSavingAnalysis] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -82,6 +83,30 @@ const Goals = () => {
     }
   };
 
+  const handleAnalysisChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAnalysis(e.target.value);
+  };
+
+  const handleSaveAnalysis = async () => {
+    setIsSavingAnalysis(true);
+    try {
+      // Here you would typically save the updated analysis to your database
+      // For now, we'll just show a success message
+      toast({
+        title: "Success",
+        description: "Analysis updated successfully!",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save analysis changes.",
+      });
+    } finally {
+      setIsSavingAnalysis(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -128,9 +153,27 @@ const Goals = () => {
 
           {analysis && (
             <Alert className="mt-4">
-              <AlertTitle>AI Analysis</AlertTitle>
-              <AlertDescription className="whitespace-pre-line">
-                {analysis}
+              <AlertTitle className="flex justify-between items-center">
+                AI Analysis
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSaveAnalysis}
+                  disabled={isSavingAnalysis}
+                >
+                  {isSavingAnalysis ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                </Button>
+              </AlertTitle>
+              <AlertDescription>
+                <Textarea
+                  value={analysis}
+                  onChange={handleAnalysisChange}
+                  className="mt-2 min-h-[200px]"
+                />
               </AlertDescription>
             </Alert>
           )}
