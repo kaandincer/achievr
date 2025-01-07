@@ -6,15 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
 
 const Goals = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [analysis, setAnalysis] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsAnalyzing(true);
     
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -23,32 +28,42 @@ const Goals = () => {
       return;
     }
 
-    const { error } = await supabase
-      .from("goals")
-      .insert([
-        {
-          user_id: user.id,
-          title,
-          description,
-        },
-      ]);
+    try {
+      // First, get AI analysis
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('analyze-goal', {
+        body: { title, description },
+      });
 
-    if (error) {
+      if (analysisError) throw analysisError;
+      setAnalysis(analysisData.analysis);
+
+      // Then, save the goal
+      const { error: saveError } = await supabase
+        .from("goals")
+        .insert([
+          {
+            user_id: user.id,
+            title,
+            description,
+          },
+        ]);
+
+      if (saveError) throw saveError;
+
+      toast({
+        title: "Success",
+        description: "Goal created successfully!",
+      });
+
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to create goal. Please try again.",
       });
-      return;
+    } finally {
+      setIsAnalyzing(false);
     }
-
-    toast({
-      title: "Success",
-      description: "Goal created successfully!",
-    });
-
-    setTitle("");
-    setDescription("");
   };
 
   return (
@@ -82,10 +97,27 @@ const Goals = () => {
             <Button
               type="submit"
               className="w-full bg-sage-500 hover:bg-sage-600 text-white"
+              disabled={isAnalyzing}
             >
-              Create Goal
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing Goal...
+                </>
+              ) : (
+                "Create Goal"
+              )}
             </Button>
           </form>
+
+          {analysis && (
+            <Alert className="mt-4">
+              <AlertTitle>AI Analysis</AlertTitle>
+              <AlertDescription className="whitespace-pre-line">
+                {analysis}
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </div>
