@@ -1,49 +1,73 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Auth } from "@supabase/auth-ui-react";
+import { ThemeSupa } from "@supabase/auth-ui-shared";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuthError } from "@supabase/supabase-js";
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const getErrorMessage = (error: AuthError) => {
+    switch (error.message) {
+      case 'Invalid login credentials':
+        return 'Invalid email or password. Please check your credentials and try again.';
+      case 'Email not confirmed':
+        return 'Please verify your email address before signing in.';
+      default:
+        return error.message;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isLogin ? "Welcome back" : "Create an account"}</CardTitle>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Welcome to Achievr</CardTitle>
           <CardDescription>
-            {isLogin
-              ? "Enter your credentials to access your account"
-              : "Fill in your information to get started"}
+            Sign in to your account or create a new one
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="Enter your email" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="Enter your password" />
+        <CardContent>
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#6B7280',
+                    brandAccent: '#4B5563',
+                  },
+                },
+              },
+            }}
+            providers={[]}
+          />
+          <div className="mt-4 text-center">
+            <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
+              Back to home
+            </Link>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full">
-            {isLogin ? "Sign in" : "Create account"}
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => setIsLogin(!isLogin)}
-          >
-            {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-          </Button>
-          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
-            Back to home
-          </Link>
-        </CardFooter>
       </Card>
     </div>
   );
