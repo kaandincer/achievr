@@ -14,6 +14,8 @@ serve(async (req) => {
   try {
     const { title, description } = await req.json();
 
+    console.log('Analyzing goal:', { title, description });
+
     const prompt = `As a goal-setting expert, analyze this goal and provide actionable feedback:
     Title: ${title}
     Description: ${description}
@@ -39,7 +41,20 @@ serve(async (req) => {
       }),
     });
 
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error}`);
+    }
+
     const data = await response.json();
+    console.log('OpenAI response:', data);
+
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Unexpected OpenAI response format:', data);
+      throw new Error('Invalid response format from OpenAI');
+    }
+
     const analysis = data.choices[0].message.content;
 
     return new Response(
@@ -47,6 +62,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    console.error('Error in analyze-goal function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
