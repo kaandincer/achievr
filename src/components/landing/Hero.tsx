@@ -32,7 +32,7 @@ export const Hero = () => {
             onClick={openSignupDialog}
             aria-label="Get Started with Achievr"
           >
-            Get Started
+            Join the Waitlist
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
