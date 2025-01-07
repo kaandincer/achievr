@@ -61,6 +61,26 @@ const Login = () => {
               },
             }}
             providers={[]}
+            localization={{
+              variables: {
+                sign_up: {
+                  password_label: 'Create Password',
+                  password_input_placeholder: 'Create a password',
+                  confirm_password: 'Confirm Password',
+                  confirm_password_label: 'Confirm your password',
+                  confirm_password_input_placeholder: 'Enter your password again',
+                  email_input_placeholder: 'Your email address',
+                  email_label: 'Email address',
+                  button_label: 'Create Account'
+                },
+                sign_in: {
+                  password_label: 'Your Password',
+                  email_label: 'Email address',
+                  email_input_placeholder: 'Your email address',
+                  button_label: 'Sign In'
+                }
+              }
+            }}
           />
           <div className="mt-4 text-center">
             <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
