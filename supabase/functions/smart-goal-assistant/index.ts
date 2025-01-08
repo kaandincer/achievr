@@ -3,20 +3,11 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Initialize OpenAI client with beta header
-const openai = new OpenAI({
-  apiKey: openAIApiKey,
-  defaultHeaders: {
-    'OpenAI-Beta': 'assistants=v2'
-  }
-});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,6 +16,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting smart-goal-assistant function');
+    
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+
     const { goal } = await req.json();
     console.log('Received goal:', goal);
 
@@ -32,69 +29,46 @@ serve(async (req) => {
       throw new Error('No goal provided');
     }
 
-    if (!assistantId) {
-      throw new Error('Assistant ID not configured');
-    }
-
-    // Create a thread
-    const thread = await openai.beta.threads.create();
-    console.log('Created thread:', thread.id);
-
-    // Add a message to the thread
-    await openai.beta.threads.messages.create(thread.id, {
-      role: "user",
-      content: `Help me make this goal SMART: ${goal}`
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: openAIApiKey
     });
 
-    // Run the assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistantId,
-      instructions: `Analyze the user's goal and provide specific guidance on making it SMART:
-      1. Specific: What exactly needs to be accomplished?
-      2. Measurable: How will progress and success be measured?
-      3. Achievable: Is this realistic with available resources?
-      4. Relevant: Why is this goal important?
-      5. Time-bound: What's the deadline?
-      
-      Format your response with clear sections for each SMART component.`
-    });
-
-    // Poll for the run to complete
-    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    let attempts = 0;
-    const maxAttempts = 60; // Maximum number of attempts (60 seconds timeout)
-    
-    while (runStatus.status === "queued" || runStatus.status === "in_progress") {
-      if (attempts >= maxAttempts) {
-        throw new Error('Request timeout: Assistant took too long to respond');
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-      console.log('Run status:', runStatus.status);
-      attempts++;
-    }
-
-    if (runStatus.status === "completed") {
-      // Get the messages
-      const messages = await openai.beta.threads.messages.list(thread.id);
-      const lastMessage = messages.data[0];
-      const response = lastMessage.content[0].text.value;
-
-      console.log('Generated response:', response);
-
-      return new Response(
-        JSON.stringify({ 
-          response,
-          threadId: thread.id
-        }),
+    console.log('Calling OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          role: "system",
+          content: `You are a SMART goal analysis assistant. Help users transform their goals into SMART goals by analyzing them across these dimensions:
+          - Specific: What exactly needs to be accomplished?
+          - Measurable: How will progress and success be measured?
+          - Achievable: Is this realistic with available resources?
+          - Relevant: Why is this goal important?
+          - Time-bound: What's the deadline?
+          
+          Provide clear, actionable feedback for each dimension.`
+        },
+        {
+          role: "user",
+          content: `Help me make this goal SMART: ${goal}`
         }
-      );
-    } else {
-      throw new Error(`Run ended with status: ${runStatus.status}`);
-    }
+      ],
+      temperature: 0.7,
+    });
+
+    const response = completion.choices[0].message.content;
+    console.log('Generated response:', response);
+
+    return new Response(
+      JSON.stringify({ 
+        response,
+        threadId: null // We don't use threads anymore
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
 
   } catch (error) {
     console.error('Error in smart-goal-assistant function:', error);
