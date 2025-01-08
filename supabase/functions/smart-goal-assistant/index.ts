@@ -29,6 +29,7 @@ serve(async (req) => {
     const { goal, step, previousAnswers, threadId } = await req.json();
     console.log('Received request:', { step, threadId, hasGoal: !!goal });
     
+    // Initialize OpenAI client with v2 header
     const openai = new OpenAI({
       apiKey: openAIApiKey,
       defaultHeaders: {
