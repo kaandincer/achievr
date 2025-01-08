@@ -10,11 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Initialize OpenAI client with v2 Assistants API header
 const openai = new OpenAI({
   apiKey: openAIApiKey,
-  defaultHeaders: {
-    'OpenAI-Beta': 'assistants=v2'  // Add the v2 header here
-  }
 });
 
 serve(async (req) => {
@@ -30,7 +28,7 @@ serve(async (req) => {
       throw new Error('No goal provided');
     }
 
-    // Create a thread
+    // Create a thread with v2 API
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
 
@@ -40,19 +38,28 @@ serve(async (req) => {
       content: `Help me make this goal SMART (Specific, Measurable, Achievable, Relevant, Time-bound): ${goal}`
     });
 
-    // Run the assistant
+    // Run the assistant with v2 API
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId!,
+      instructions: "You are a SMART goal expert. Analyze the user's goal and provide specific guidance on making it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Give clear, actionable feedback."
     });
 
     // Wait for the completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    while (runStatus.status !== "completed") {
-      if (runStatus.status === "failed") {
-        throw new Error("Assistant run failed");
-      }
+    
+    // Poll for completion
+    while (runStatus.status === "queued" || runStatus.status === "in_progress") {
+      console.log('Run status:', runStatus.status);
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    }
+
+    if (runStatus.status === "failed") {
+      throw new Error("Assistant run failed: " + runStatus.last_error?.message);
+    }
+
+    if (runStatus.status !== "completed") {
+      throw new Error(`Unexpected run status: ${runStatus.status}`);
     }
 
     // Get the assistant's response
