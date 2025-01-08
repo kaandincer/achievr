@@ -1,6 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,79 +10,127 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { goal } = await req.json();
-    
-    const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY'),
-      defaultHeaders: {
-        'OpenAI-Beta': 'assistants=v2'  // Add this header for v2 API
-      }
+    const { title, description } = await req.json();
+    console.log('Analyzing goal:', { title, description });
+
+    // Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({})
     });
 
-    const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
-    if (!assistantId) {
-      throw new Error('Assistant ID not configured');
+    if (!threadResponse.ok) {
+      throw new Error(`Failed to create thread: ${await threadResponse.text()}`);
     }
 
-    console.log('Creating thread...');
-    const thread = await openai.beta.threads.create();
+    const thread = await threadResponse.json();
+    console.log('Created thread:', thread.id);
 
-    console.log('Adding message to thread...');
-    await openai.beta.threads.messages.create(thread.id, {
-      role: "user",
-      content: `Please analyze this goal and provide feedback on how to make it SMARTer: ${goal}`,
+    // Add a message to the thread
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: `Please analyze this goal:
+          Title: ${title}
+          Description: ${description}
+          
+          Please provide:
+          1. An assessment of how well-defined the goal is
+          2. Suggestions for making it more specific and measurable
+          3. Potential steps or milestones to achieve this goal
+          4. Any potential challenges to consider`
+      })
     });
 
-    console.log('Running assistant...');
-    const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistantId,
+    if (!messageResponse.ok) {
+      throw new Error(`Failed to create message: ${await messageResponse.text()}`);
+    }
+    console.log('Added message to thread');
+
+    // Run the assistant
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId
+      })
     });
 
-    console.log('Waiting for completion...');
-    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    
-    while (runStatus.status !== "completed") {
-      if (runStatus.status === "failed") {
-        console.error('Run failed:', runStatus);
-        throw new Error("Assistant run failed");
-      }
-      if (runStatus.status === "expired") {
-        console.error('Run expired:', runStatus);
-        throw new Error("Assistant run expired");
+    if (!runResponse.ok) {
+      throw new Error(`Failed to create run: ${await runResponse.text()}`);
+    }
+
+    const run = await runResponse.json();
+    console.log('Started run:', run.id);
+
+    // Poll for completion
+    let runStatus;
+    do {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between polls
+      
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
+        }
+      });
+      
+      if (!statusResponse.ok) {
+        throw new Error(`Failed to get run status: ${await statusResponse.text()}`);
       }
       
-      // Wait for 1 second before checking again
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-      console.log('Current status:', runStatus.status);
+      runStatus = await statusResponse.json();
+      console.log('Run status:', runStatus.status);
+    } while (runStatus.status === 'queued' || runStatus.status === 'in_progress');
+
+    if (runStatus.status !== 'completed') {
+      throw new Error(`Run failed with status: ${runStatus.status}`);
     }
 
-    console.log('Retrieving messages...');
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const lastMessage = messages.data[0];
-    const analysis = lastMessage.content[0].text.value;
+    // Get the messages
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
+      }
+    });
 
-    console.log('Analysis complete:', analysis);
+    if (!messagesResponse.ok) {
+      throw new Error(`Failed to get messages: ${await messagesResponse.text()}`);
+    }
+
+    const messages = await messagesResponse.json();
+    const analysis = messages.data[0].content[0].text.value;
+
     return new Response(
       JSON.stringify({ analysis }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in analyze-goal function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

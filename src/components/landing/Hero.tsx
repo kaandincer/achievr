@@ -1,73 +1,81 @@
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
-  const navigate = useNavigate();
   const [goal, setGoal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleAnalyzeGoal = async () => {
+  const analyzeGoal = async () => {
     if (!goal.trim()) {
-      toast.error("Please enter a goal to analyze");
+      toast({
+        title: "Please enter a goal",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsAnalyzing(true);
     try {
-      navigate("/analysis", { state: { goal: goal.trim() } });
+      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
+        body: { title: goal },
+      });
+
+      if (error) throw error;
+
+      // Navigate to analysis page with the result
+      navigate('/analysis', { 
+        state: { 
+          goal,
+          analysis: data.analysis 
+        } 
+      });
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      console.error('Error analyzing goal:', error);
+      toast({
+        title: "Something went wrong",
+        description: "Unable to analyze your goal. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsAnalyzing(false);
     }
   };
 
   return (
-    <section className="min-h-[90vh] flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 py-16" role="banner">
-      <div className="max-w-4xl mx-auto text-center space-y-12 animate-fade-up">
-        <header className="space-y-6">
+    <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8" role="banner">
+      <div className="max-w-2xl mx-auto text-center space-y-8 animate-fade-up">
+        <header className="space-y-4">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
             Transform Your Goals into{" "}
-            <span className="text-sage-600">Achievements</span>
+            <span className="text-sage-600">SMART Goals</span>
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Your AI-powered accountability partner that helps you stay focused,
-            track progress, and achieve your goals with precision and purpose.
+            Enter your goal below and let our AI help you make it Specific, Measurable, 
+            Achievable, Relevant, and Time-bound.
           </p>
         </header>
 
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="flex flex-col gap-4">
-            <Input
-              type="text"
-              placeholder="Enter your goal here..."
-              value={goal}
-              onChange={(e) => setGoal(e.target.value)}
-              className="text-lg h-14 px-6"
-              aria-label="Enter your goal"
-            />
-            <Button
-              onClick={handleAnalyzeGoal}
-              disabled={isAnalyzing}
-              className="w-full h-14 text-lg bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
-              aria-label="Analyze Goal"
-            >
-              {isAnalyzing ? (
-                <div className="flex items-center gap-2">
-                  Analyzing
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  Analyze Goal
-                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
-                </div>
-              )}
-            </Button>
-          </div>
+        <div className="space-y-4">
+          <Input
+            placeholder="Enter your goal"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            className="text-lg"
+          />
+          <Button
+            size="lg"
+            className="w-full bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
+            onClick={analyzeGoal}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? "Analyzing..." : "Analyze Goal"}
+          </Button>
         </div>
       </div>
     </section>

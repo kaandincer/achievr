@@ -1,81 +1,178 @@
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { GoalProvider } from "@/components/smart-goal/GoalContext";
+import { QuestionForm } from "@/components/smart-goal/QuestionForm";
+import { GoalSummary } from "@/components/smart-goal/GoalSummary";
 
 const Analysis = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [analysis, setAnalysis] = useState("");
-  const goal = location.state?.goal;
+  const { toast } = useToast();
+  const { goal } = location.state || {};
+  const [currentStep, setCurrentStep] = useState("");
+  const [response, setResponse] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!goal) {
-      navigate("/");
+      navigate('/');
       return;
     }
+    initializeConversation();
+  }, [goal]);
 
-    const analyzeGoal = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('analyze-goal', {
-          body: { goal }
-        });
+  const initializeConversation = async () => {
+    setIsLoading(true);
+    try {
+      // Create a new conversation
+      const { data: conversation, error: conversationError } = await supabase
+        .from('smart_goal_conversations')
+        .insert([
+          {
+            original_goal: goal,
+            current_step: 'S',
+            conversation_history: []
+          }
+        ])
+        .select()
+        .single();
 
-        if (error) {
-          throw new Error(error.message);
-        }
+      if (conversationError) throw conversationError;
 
-        setAnalysis(data.analysis);
-      } catch (error) {
-        console.error("Error analyzing goal:", error);
-        toast.error("Failed to analyze goal. Please try again.");
-        navigate("/");
-      } finally {
-        setIsLoading(false);
+      setConversationId(conversation.id);
+      
+      // Get initial response from assistant
+      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
+        body: { 
+          conversationId: conversation.id,
+          goal,
+          step: 'S',
+          userInput: null
+        },
+      });
+
+      if (error) throw error;
+
+      setResponse(data.response);
+      setCurrentStep('S');
+    } catch (error) {
+      console.error('Error initializing conversation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start the conversation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = async (userInput: string) => {
+    setIsLoading(true);
+    try {
+      // Get next step based on current step
+      const nextStep = {
+        'S': 'M',
+        'M': 'A',
+        'A': 'R',
+        'R': 'T',
+        'T': 'complete'
+      }[currentStep];
+
+      // Update conversation in database
+      const { error: updateError } = await supabase
+        .from('smart_goal_conversations')
+        .update({ 
+          current_step: nextStep,
+          conversation_history: [...(await getCurrentHistory()), {
+            step: currentStep,
+            userInput,
+            assistantResponse: response
+          }]
+        })
+        .eq('id', conversationId);
+
+      if (updateError) throw updateError;
+
+      if (nextStep === 'complete') {
+        // Handle completion
+        navigate('/goals');
+        return;
       }
-    };
 
-    analyzeGoal();
-  }, [goal, navigate]);
+      // Get next response from assistant
+      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
+        body: { 
+          conversationId,
+          step: nextStep,
+          userInput
+        },
+      });
+
+      if (error) throw error;
+
+      setResponse(data.response);
+      setCurrentStep(nextStep);
+    } catch (error) {
+      console.error('Error processing next step:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process your input. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCurrentHistory = async () => {
+    const { data } = await supabase
+      .from('smart_goal_conversations')
+      .select('conversation_history')
+      .eq('id', conversationId)
+      .single();
+    
+    return data?.conversation_history || [];
+  };
+
+  if (!goal) return null;
 
   return (
-    <div className="min-h-screen bg-white p-6">
-      <Button
-        variant="ghost"
-        onClick={() => navigate("/")}
-        className="mb-6"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
-      </Button>
+    <GoalProvider initialGoal={goal}>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/')}
+            className="mb-6"
+          >
+            ← Back to Goal Entry
+          </Button>
 
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Goal Analysis</h1>
-        
-        <div className="bg-gray-50 p-6 rounded-lg mb-6">
-          <h2 className="text-xl font-semibold mb-2">Your Goal</h2>
-          <p className="text-gray-700">{goal}</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">Make Your Goal SMART</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <GoalSummary />
+              
+              {response && (
+                <QuestionForm
+                  response={response}
+                  onNext={handleNext}
+                  isLoading={isLoading}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage-500"></div>
-          </div>
-        ) : (
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">AI Analysis</h2>
-            <div className="prose max-w-none">
-              {analysis.split('\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">{paragraph}</p>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </GoalProvider>
   );
 };
 
