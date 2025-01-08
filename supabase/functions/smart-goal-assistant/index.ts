@@ -13,7 +13,7 @@ const corsHeaders = {
 const openai = new OpenAI({
   apiKey: openAIApiKey,
   defaultHeaders: {
-    'OpenAI-Beta': 'assistants=v2'
+    'OpenAI-Beta': 'assistants=v2'  // Add the v2 header here
   }
 });
 
@@ -25,6 +25,10 @@ serve(async (req) => {
   try {
     const { goal } = await req.json();
     console.log('Received goal:', goal);
+
+    if (!goal) {
+      throw new Error('No goal provided');
+    }
 
     // Create a thread
     const thread = await openai.beta.threads.create();
@@ -55,6 +59,10 @@ serve(async (req) => {
     const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data[0];
 
+    if (!lastMessage || !lastMessage.content[0]?.text?.value) {
+      throw new Error('No response received from assistant');
+    }
+
     return new Response(
       JSON.stringify({
         response: lastMessage.content[0].text.value,
@@ -67,7 +75,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in smart-goal-assistant function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
