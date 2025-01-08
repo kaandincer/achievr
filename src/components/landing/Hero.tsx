@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Hero = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [goal, setGoal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const analyzeGoal = async () => {
-    if (!title.trim()) {
+    if (!goal.trim()) {
       toast({
-        title: "Please enter a goal title",
+        title: "Please enter a goal",
         variant: "destructive",
       });
       return;
@@ -23,7 +21,7 @@ export const Hero = () => {
     setIsAnalyzing(true);
     try {
       const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
-        body: { title, description },
+        body: { title: goal },
       });
 
       if (error) throw error;
@@ -60,16 +58,10 @@ export const Hero = () => {
 
         <div className="space-y-4">
           <Input
-            placeholder="Enter your goal title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter your goal"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
             className="text-lg"
-          />
-          <Textarea
-            placeholder="Describe your goal in detail (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[100px]"
           />
           <Button
             size="lg"
