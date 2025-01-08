@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { QuestionStep } from "@/components/smart-goal/QuestionStep";
-import { AIResponse } from "@/components/smart-goal/AIResponse";
-import { ProgressIndicator } from "@/components/smart-goal/ProgressIndicator";
+import { cn } from "@/lib/utils";
 
-const questions = [
+type Question = {
+  id: number;
+  label: string;
+  placeholder: string;
+};
+
+const questions: Question[] = [
   {
     id: 1,
     label: "Make your goal as specific as possible",
@@ -38,53 +41,15 @@ const questions = [
 const SmartGoal = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const originalGoal = location.state?.goal || "";
   const [currentStep, setCurrentStep] = useState(1);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [aiResponse, setAiResponse] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [threadId, setThreadId] = useState<string>("");
-
-  const getAIResponse = async (step: number) => {
-    setIsLoading(true);
-    try {
-      console.log('Calling AI assistant with:', { step, threadId, originalGoal });
-      const response = await supabase.functions.invoke('smart-goal-assistant', {
-        body: {
-          goal: originalGoal,
-          step,
-          previousAnswers: answers,
-          threadId,
-        },
-      });
-
-      if (response.error) {
-        console.error('Supabase function error:', response.error);
-        throw new Error(response.error.message || "Failed to get AI response");
-      }
-
-      if (!response.data) {
-        console.error('No data in response:', response);
-        throw new Error("No response data from AI assistant");
-      }
-
-      console.log('AI Response:', response.data);
-      setAiResponse(response.data.response);
-      if (response.data.threadId) {
-        setThreadId(response.data.threadId);
-      }
-    } catch (error) {
-      console.error("Error getting AI response:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to get AI guidance. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [answers, setAnswers] = useState({
+    1: "",
+    2: "",
+    3: "",
+    4: "",
+    5: "",
+  });
 
   const handleInputChange = (value: string) => {
     setAnswers((prev) => ({
@@ -93,20 +58,9 @@ const SmartGoal = () => {
     }));
   };
 
-  const handleNext = async () => {
-    if (!answers[currentStep]) {
-      toast({
-        title: "Input Required",
-        description: "Please provide an answer before continuing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleNext = () => {
     if (currentStep < questions.length) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-      await getAIResponse(nextStep);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
@@ -117,14 +71,6 @@ const SmartGoal = () => {
       navigate("/");
     }
   };
-
-  useEffect(() => {
-    if (!originalGoal) {
-      navigate("/");
-      return;
-    }
-    getAIResponse(1);
-  }, []);
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -138,35 +84,54 @@ const SmartGoal = () => {
           </p>
         </div>
 
-        <AIResponse response={aiResponse} isLoading={isLoading} />
-
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          <QuestionStep
-            question={questions[currentStep - 1]}
-            value={answers[currentStep] || ""}
-            onChange={handleInputChange}
-          />
+          {questions.map((question) => (
+            <div
+              key={question.id}
+              className={cn(
+                "space-y-4 transition-all duration-300",
+                currentStep === question.id
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4 hidden"
+              )}
+            >
+              <label className="block text-lg font-medium text-gray-900">
+                {question.label}
+              </label>
+              <Input
+                value={answers[question.id as keyof typeof answers]}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={question.placeholder}
+                className="w-full text-lg p-4"
+              />
+            </div>
+          ))}
         </div>
 
         <div className="flex justify-center gap-4">
-          <Button onClick={handleBack} variant="outline" disabled={isLoading}>
+          <Button onClick={handleBack} variant="outline">
             {currentStep === 1 ? "Back to Home" : "Previous"}
           </Button>
           {currentStep < questions.length && (
-            <Button 
-              onClick={handleNext} 
-              className="bg-sage-600 hover:bg-sage-700"
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : "Next"}
+            <Button onClick={handleNext} className="bg-sage-600 hover:bg-sage-700">
+              Next
             </Button>
           )}
         </div>
 
-        <ProgressIndicator 
-          totalSteps={questions.length} 
-          currentStep={currentStep} 
-        />
+        <div className="flex justify-center gap-2">
+          {questions.map((question) => (
+            <div
+              key={question.id}
+              className={cn(
+                "w-3 h-3 rounded-full",
+                currentStep === question.id
+                  ? "bg-sage-600"
+                  : "bg-gray-200"
+              )}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
