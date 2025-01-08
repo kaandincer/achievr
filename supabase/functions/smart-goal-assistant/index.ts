@@ -61,11 +61,18 @@ serve(async (req) => {
 
     // Poll for the run to complete
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    let attempts = 0;
+    const maxAttempts = 60; // Maximum number of attempts (60 seconds timeout)
     
     while (runStatus.status === "queued" || runStatus.status === "in_progress") {
+      if (attempts >= maxAttempts) {
+        throw new Error('Request timeout: Assistant took too long to respond');
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       console.log('Run status:', runStatus.status);
+      attempts++;
     }
 
     if (runStatus.status === "completed") {
