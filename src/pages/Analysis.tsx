@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { GoalProvider } from "@/components/smart-goal/GoalContext";
+import { QuestionForm } from "@/components/smart-goal/QuestionForm";
+import { GoalSummary } from "@/components/smart-goal/GoalSummary";
 
 const Analysis = () => {
   const location = useLocation();
@@ -13,7 +15,6 @@ const Analysis = () => {
   const { goal } = location.state || {};
   const [currentStep, setCurrentStep] = useState("");
   const [response, setResponse] = useState("");
-  const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
@@ -28,18 +29,11 @@ const Analysis = () => {
   const initializeConversation = async () => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
       // Create a new conversation
       const { data: conversation, error: conversationError } = await supabase
         .from('smart_goal_conversations')
         .insert([
           {
-            user_id: user.id,
             original_goal: goal,
             current_step: 'S',
             conversation_history: []
@@ -78,16 +72,7 @@ const Analysis = () => {
     }
   };
 
-  const handleNext = async () => {
-    if (!userInput.trim()) {
-      toast({
-        title: "Input required",
-        description: "Please provide an answer before continuing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleNext = async (userInput: string) => {
     setIsLoading(true);
     try {
       // Get next step based on current step
@@ -104,11 +89,11 @@ const Analysis = () => {
         .from('smart_goal_conversations')
         .update({ 
           current_step: nextStep,
-          conversation_history: supabase.sql`array_append(conversation_history, ${JSON.stringify({
+          conversation_history: [...(await getCurrentHistory()), {
             step: currentStep,
             userInput,
             assistantResponse: response
-          })})`
+          }]
         })
         .eq('id', conversationId);
 
@@ -133,7 +118,6 @@ const Analysis = () => {
 
       setResponse(data.response);
       setCurrentStep(nextStep);
-      setUserInput('');
     } catch (error) {
       console.error('Error processing next step:', error);
       toast({
@@ -146,56 +130,49 @@ const Analysis = () => {
     }
   };
 
+  const getCurrentHistory = async () => {
+    const { data } = await supabase
+      .from('smart_goal_conversations')
+      .select('conversation_history')
+      .eq('id', conversationId)
+      .single();
+    
+    return data?.conversation_history || [];
+  };
+
   if (!goal) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/')}
-          className="mb-6"
-        >
-          ← Back to Goal Entry
-        </Button>
+    <GoalProvider initialGoal={goal}>
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/')}
+            className="mb-6"
+          >
+            ← Back to Goal Entry
+          </Button>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Make Your Goal SMART</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Your Original Goal</h3>
-              <p className="mt-2 text-gray-600">{goal}</p>
-            </div>
-            
-            {response && (
-              <div className="space-y-4">
-                <div className="prose prose-sage">
-                  <p className="whitespace-pre-wrap text-gray-600">{response}</p>
-                </div>
-                
-                <div className="space-y-4">
-                  <Input
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder="Type your answer here..."
-                    className="w-full"
-                  />
-                  <Button
-                    onClick={handleNext}
-                    disabled={isLoading}
-                    className="w-full bg-sage-500 hover:bg-sage-600 text-white"
-                  >
-                    {isLoading ? "Processing..." : "Next"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">Make Your Goal SMART</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <GoalSummary />
+              
+              {response && (
+                <QuestionForm
+                  response={response}
+                  onNext={handleNext}
+                  isLoading={isLoading}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </GoalProvider>
   );
 };
 
