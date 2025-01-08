@@ -60,6 +60,7 @@ const SmartGoal = () => {
   const getAIResponse = async (step: number) => {
     setIsLoading(true);
     try {
+      console.log('Calling AI assistant with:', { step, threadId, originalGoal });
       const response = await supabase.functions.invoke('smart-goal-assistant', {
         body: {
           goal: originalGoal,
@@ -70,9 +71,16 @@ const SmartGoal = () => {
       });
 
       if (response.error) {
-        throw new Error("Failed to get AI response");
+        console.error('Supabase function error:', response.error);
+        throw new Error(response.error.message || "Failed to get AI response");
       }
 
+      if (!response.data) {
+        console.error('No data in response:', response);
+        throw new Error("No response data from AI assistant");
+      }
+
+      console.log('AI Response:', response.data);
       setAiResponse(response.data.response);
       if (response.data.threadId) {
         setThreadId(response.data.threadId);
@@ -81,7 +89,7 @@ const SmartGoal = () => {
       console.error("Error getting AI response:", error);
       toast({
         title: "Error",
-        description: "Failed to get AI guidance. Please try again.",
+        description: error.message || "Failed to get AI guidance. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -97,6 +105,15 @@ const SmartGoal = () => {
   };
 
   const handleNext = async () => {
+    if (!answers[currentStep as keyof typeof answers]) {
+      toast({
+        title: "Input Required",
+        description: "Please provide an answer before continuing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (currentStep < questions.length) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
@@ -114,6 +131,10 @@ const SmartGoal = () => {
 
   // Get initial AI response when component mounts
   useEffect(() => {
+    if (!originalGoal) {
+      navigate("/");
+      return;
+    }
     getAIResponse(1);
   }, []);
 
@@ -129,7 +150,11 @@ const SmartGoal = () => {
           </p>
         </div>
 
-        {aiResponse && (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sage-600"></div>
+          </div>
+        ) : aiResponse && (
           <div className="bg-sage-50 p-6 rounded-lg border border-sage-200">
             <p className="text-sage-800">{aiResponse}</p>
           </div>
