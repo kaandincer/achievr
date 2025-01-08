@@ -10,27 +10,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize OpenAI client with v2 Assistants API header
+// Initialize OpenAI client with the required v2 header
 const openai = new OpenAI({
   apiKey: openAIApiKey,
+  defaultHeaders: {
+    'OpenAI-Beta': 'assistants=v2'
+  }
 });
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { goal } = await req.json();
+    const { goal, threadId } = await req.json();
     console.log('Received goal:', goal);
 
     if (!goal) {
       throw new Error('No goal provided');
     }
 
-    // Create a thread with v2 API
-    const thread = await openai.beta.threads.create();
-    console.log('Created thread:', thread.id);
+    // Use existing thread or create a new one
+    const thread = threadId ? 
+      { id: threadId } : 
+      await openai.beta.threads.create();
+    
+    console.log('Thread ID:', thread.id);
 
     // Add a message to the thread
     await openai.beta.threads.messages.create(thread.id, {
@@ -38,7 +45,7 @@ serve(async (req) => {
       content: `Help me make this goal SMART (Specific, Measurable, Achievable, Relevant, Time-bound): ${goal}`
     });
 
-    // Run the assistant with v2 API
+    // Run the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId!,
       instructions: "You are a SMART goal expert. Analyze the user's goal and provide specific guidance on making it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Give clear, actionable feedback."
@@ -47,15 +54,25 @@ serve(async (req) => {
     // Wait for the completion
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     
-    // Poll for completion
+    // Poll for completion with timeout
+    const startTime = Date.now();
+    const timeout = 30000; // 30 seconds timeout
+
     while (runStatus.status === "queued" || runStatus.status === "in_progress") {
       console.log('Run status:', runStatus.status);
+      
+      // Check for timeout
+      if (Date.now() - startTime > timeout) {
+        throw new Error("Assistant request timed out");
+      }
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
 
     if (runStatus.status === "failed") {
-      throw new Error("Assistant run failed: " + runStatus.last_error?.message);
+      console.error('Run failed:', runStatus.last_error);
+      throw new Error(`Assistant run failed: ${runStatus.last_error?.message}`);
     }
 
     if (runStatus.status !== "completed") {
