@@ -16,16 +16,17 @@ serve(async (req) => {
   try {
     const { goal, step, previousAnswers } = await req.json();
 
-    const messages = [
-      {
-        role: "system",
-        content: "You are an AI assistant helping users create SMART goals. Guide them through each step (Specific, Measurable, Achievable, Relevant, Time-bound) one at a time. Ask thoughtful questions to help them refine their goal. Be concise but encouraging."
-      },
-      {
-        role: "user",
-        content: `Original goal: ${goal}\nCurrent step: ${step}\nPrevious answers: ${JSON.stringify(previousAnswers)}`
+    let systemPrompt = "You are an AI assistant helping users create SMART goals. Guide them through each step (Specific, Measurable, Achievable, Relevant, Time-bound) one at a time. Ask thoughtful questions to help them refine their goal. Be concise but encouraging.";
+    
+    let userPrompt = `Original goal: ${goal}\nCurrent step: ${step}\n`;
+    if (Object.keys(previousAnswers).length > 0) {
+      userPrompt += `Previous answers:\n`;
+      for (const [key, value] of Object.entries(previousAnswers)) {
+        if (Number(key) < step) {
+          userPrompt += `Step ${key}: ${value}\n`;
+        }
       }
-    ];
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -35,7 +36,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        messages,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
         temperature: 0.7,
       }),
     });

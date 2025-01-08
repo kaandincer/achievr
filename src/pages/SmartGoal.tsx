@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type Question = {
   id: number;
@@ -59,28 +59,19 @@ const SmartGoal = () => {
   const getAIResponse = async (step: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_PROJECT_URL}/functions/v1/smart-goal-assistant`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            goal: originalGoal,
-            step,
-            previousAnswers: answers,
-          }),
-        }
-      );
+      const response = await supabase.functions.invoke('smart-goal-assistant', {
+        body: {
+          goal: originalGoal,
+          step,
+          previousAnswers: answers,
+        },
+      });
 
-      if (!response.ok) {
+      if (response.error) {
         throw new Error("Failed to get AI response");
       }
 
-      const data = await response.json();
-      setAiResponse(data.response);
+      setAiResponse(response.data.response);
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast({
@@ -117,7 +108,7 @@ const SmartGoal = () => {
   };
 
   // Get initial AI response when component mounts
-  useState(() => {
+  useEffect(() => {
     getAIResponse(1);
   }, []);
 
