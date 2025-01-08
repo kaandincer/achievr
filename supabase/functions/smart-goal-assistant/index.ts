@@ -47,15 +47,22 @@ serve(async (req) => {
       console.log('Adding initial message');
       await openai.beta.threads.messages.create(thread.id, {
         role: "user",
-        content: `My goal is: ${goal}. Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound).`
+        content: `My goal is: ${goal}. Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). For step 1, help me make it specific.`
       });
     } else {
-      // For subsequent steps, add the user's previous answer
+      // For subsequent steps, add the user's previous answer and prepare for next step
       console.log('Adding user response for step', step - 1);
       const prevAnswer = previousAnswers[step - 1];
+      const stepInstructions = {
+        2: "Now, help me make this goal measurable.",
+        3: "Next, help me make this goal achievable.",
+        4: "Let's make this goal relevant.",
+        5: "Finally, help me make this goal time-bound."
+      };
+      
       await openai.beta.threads.messages.create(threadId, {
         role: "user",
-        content: prevAnswer
+        content: `My answer for the previous step: ${prevAnswer}. ${stepInstructions[step as keyof typeof stepInstructions]}`
       });
     }
 
@@ -66,9 +73,7 @@ serve(async (req) => {
     console.log('Starting assistant run');
     const run = await openai.beta.threads.runs.create(
       currentThreadId, 
-      {
-        assistant_id: assistantId,
-      }
+      { assistant_id: assistantId }
     );
 
     // Wait for the run to complete
@@ -80,16 +85,21 @@ serve(async (req) => {
     
     while (runStatus.status !== 'completed') {
       console.log('Run status:', runStatus.status);
+      if (runStatus.status === 'failed') {
+        console.error('Run failed:', runStatus);
+        throw new Error('Assistant run failed');
+      }
+      if (runStatus.status === 'requires_action') {
+        console.error('Run requires action:', runStatus);
+        throw new Error('Assistant requires action - not supported in this implementation');
+      }
+      
+      // Wait a second before checking again
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(
         currentThreadId, 
         run.id
       );
-      
-      if (runStatus.status === 'failed') {
-        console.error('Run failed:', runStatus);
-        throw new Error('Assistant run failed');
-      }
     }
 
     // Get the latest message from the assistant
@@ -97,9 +107,14 @@ serve(async (req) => {
     const messages = await openai.beta.threads.messages.list(
       currentThreadId
     );
+    
+    if (!messages.data || messages.data.length === 0) {
+      throw new Error('No response received from assistant');
+    }
+    
     const lastMessage = messages.data[0];
     const response = lastMessage.content[0].text.value;
-    console.log('Got response from assistant');
+    console.log('Got response from assistant:', response);
 
     return new Response(
       JSON.stringify({ 
