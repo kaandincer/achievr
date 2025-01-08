@@ -10,13 +10,6 @@ export const Hero = () => {
   const [goal, setGoal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const scrollToFeatures = () => {
-    const featuresSection = document.getElementById('features-section');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const handleAnalyzeGoal = async () => {
     if (!goal.trim()) {
       toast.error("Please enter a goal to analyze");
@@ -77,29 +70,6 @@ export const Hero = () => {
               )}
             </Button>
           </div>
-        </div>
-
-        <div className="absolute bottom-8 left-0 right-0">
-          <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-sage-500 text-sage-600 hover:bg-sage-50"
-              onClick={scrollToFeatures}
-              aria-label="Learn More about Achievr"
-            >
-              Learn More
-            </Button>
-            <Button
-              size="lg"
-              className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
-              onClick={openSignupDialog}
-              aria-label="Join the Waitlist"
-            >
-              Join the Waitlist
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Button>
-          </nav>
         </div>
       </div>
     </section>
