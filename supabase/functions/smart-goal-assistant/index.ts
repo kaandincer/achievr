@@ -67,6 +67,10 @@ serve(async (req) => {
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
       attempts++;
       console.log(`Checking run status (${attempts}/${maxAttempts}):`, runStatus.status);
+
+      if (runStatus.status === 'failed') {
+        throw new Error(`Assistant run failed: ${runStatus.last_error?.message || 'Unknown error'}`);
+      }
     }
 
     if (runStatus.status !== 'completed') {
