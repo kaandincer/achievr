@@ -4,7 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import SmartGoal from "./pages/SmartGoal";
+import Login from "./pages/Login";
+import Goals from "./pages/Goals";
 
 const queryClient = new QueryClient();
 
@@ -14,7 +15,8 @@ const App = () => (
       <TooltipProvider>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/smart-goal" element={<SmartGoal />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/goals" element={<Goals />} />
         </Routes>
         <Toaster />
         <Sonner />
