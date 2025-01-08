@@ -3,15 +3,19 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize OpenAI client
+// Initialize OpenAI client with beta header
 const openai = new OpenAI({
   apiKey: openAIApiKey,
+  defaultHeaders: {
+    'OpenAI-Beta': 'assistants=v2'
+  }
 });
 
 serve(async (req) => {
@@ -28,6 +32,10 @@ serve(async (req) => {
       throw new Error('No goal provided');
     }
 
+    if (!assistantId) {
+      throw new Error('Assistant ID not configured');
+    }
+
     // Create a thread
     const thread = await openai.beta.threads.create();
     console.log('Created thread:', thread.id);
@@ -40,7 +48,7 @@ serve(async (req) => {
 
     // Run the assistant
     const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: "asst_abc123", // Replace with your actual assistant ID
+      assistant_id: assistantId,
       instructions: `Analyze the user's goal and provide specific guidance on making it SMART:
       1. Specific: What exactly needs to be accomplished?
       2. Measurable: How will progress and success be measured?
