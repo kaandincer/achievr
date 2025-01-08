@@ -16,75 +16,48 @@ serve(async (req) => {
   }
 
   try {
-    const { conversationId, goal, step, userInput } = await req.json();
-    
-    if (!conversationId) {
-      throw new Error('No conversation ID provided');
+    const { title } = await req.json();
+    console.log('Processing goal:', title);
+
+    // Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({})
+    });
+
+    if (!threadResponse.ok) {
+      throw new Error(`Failed to create thread: ${await threadResponse.text()}`);
     }
 
-    console.log('Processing request:', { conversationId, goal, step, userInput });
+    const thread = await threadResponse.json();
+    console.log('Created thread:', thread.id);
 
-    // Create a thread if this is the first step
-    let threadId;
-    if (step === 'S' && goal) {
-      console.log('Creating new thread for initial goal');
-      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({})
-      });
+    // Add a message to the thread
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2'
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: `Please analyze this goal and help make it SMART (Specific, Measurable, Achievable, Relevant, and Time-bound): ${title}`
+      })
+    });
 
-      if (!threadResponse.ok) {
-        throw new Error(`Failed to create thread: ${await threadResponse.text()}`);
-      }
-
-      const thread = await threadResponse.json();
-      threadId = thread.id;
-      console.log('Created thread:', threadId);
-
-      // Add initial message about the goal
-      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: `I want to make this goal SMART: "${goal}". Let's start with making it Specific. Ask me questions to help make this goal more specific.`
-        })
-      });
-    } else {
-      // For subsequent steps, we need to add the user's input and request the next step
-      const stepMessages = {
-        'M': "Now, let's make this goal Measurable. Ask me questions about how we can measure progress towards this goal.",
-        'A': "Let's ensure this goal is Achievable. Ask me questions about the resources, skills, and support needed to achieve this goal.",
-        'R': "Now, let's make sure this goal is Relevant. Ask me questions about how this goal aligns with my broader objectives and values.",
-        'T': "Finally, let's make this goal Time-bound. Ask me questions about the timeline and deadlines for achieving this goal."
-      };
-
-      // Add user's response and request next step
-      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: `My answer: ${userInput}\n\n${stepMessages[step]}`
-        })
-      });
+    if (!messageResponse.ok) {
+      throw new Error(`Failed to create message: ${await messageResponse.text()}`);
     }
+    console.log('Added message to thread');
 
     // Run the assistant
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -104,26 +77,16 @@ serve(async (req) => {
     console.log('Started run:', run.id);
 
     // Poll for completion
-    const maxAttempts = 30;
-    let attempts = 0;
     let runStatus;
-    
     do {
-      if (attempts >= maxAttempts) {
-        throw new Error('Analysis timed out');
-      }
-      
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${openAIApiKey}`,
-            'OpenAI-Beta': 'assistants=v2'
-          }
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'OpenAI-Beta': 'assistants=v2'
         }
-      );
+      });
       
       if (!statusResponse.ok) {
         throw new Error(`Failed to get run status: ${await statusResponse.text()}`);
@@ -131,7 +94,6 @@ serve(async (req) => {
       
       runStatus = await statusResponse.json();
       console.log('Run status:', runStatus.status);
-      attempts++;
     } while (runStatus.status === 'queued' || runStatus.status === 'in_progress');
 
     if (runStatus.status !== 'completed') {
@@ -139,38 +101,28 @@ serve(async (req) => {
     }
 
     // Get the messages
-    const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${threadId}/messages`,
-      {
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'OpenAI-Beta': 'assistants=v2'
-        }
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'OpenAI-Beta': 'assistants=v2'
       }
-    );
+    });
 
     if (!messagesResponse.ok) {
       throw new Error(`Failed to get messages: ${await messagesResponse.text()}`);
     }
 
     const messages = await messagesResponse.json();
-    const response = messages.data[0].content[0].text.value;
+    const analysis = messages.data[0].content[0].text.value;
 
-    return new Response(
-      JSON.stringify({ response }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ analysis }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in smart-goal-assistant function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        details: `Error: ${error.message}`
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
