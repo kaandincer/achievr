@@ -83,7 +83,7 @@ export type Database = {
           id: string
           original_goal: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           conversation_history?: Json | null
@@ -92,7 +92,7 @@ export type Database = {
           id?: string
           original_goal: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           conversation_history?: Json | null
@@ -101,7 +101,7 @@ export type Database = {
           id?: string
           original_goal?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

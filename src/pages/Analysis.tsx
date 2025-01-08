@@ -28,18 +28,11 @@ const Analysis = () => {
   const initializeConversation = async () => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      // Create a new conversation
+      // Create a new conversation without user_id
       const { data: conversation, error: conversationError } = await supabase
         .from('smart_goal_conversations')
         .insert([
           {
-            user_id: user.id,
             original_goal: goal,
             current_step: 'S',
             conversation_history: []
