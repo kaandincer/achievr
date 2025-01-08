@@ -1,14 +1,36 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSignupDialog } from "./SignupDialog";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Hero = () => {
   const { openSignupDialog } = useSignupDialog();
+  const [goal, setGoal] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const scrollToFeatures = () => {
     const featuresSection = document.getElementById('features-section');
     if (featuresSection) {
       featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleAnalyzeGoal = async () => {
+    if (!goal.trim()) {
+      toast.error("Please enter a goal to analyze");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      toast.success("Goal received! Join the waitlist to get personalized analysis.");
+      openSignupDialog();
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -25,6 +47,33 @@ export const Hero = () => {
             track progress, and achieve your goals with precision and purpose.
           </p>
         </header>
+
+        <div className="max-w-xl mx-auto space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Enter your goal here..."
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              className="flex-1"
+              aria-label="Enter your goal"
+            />
+            <Button
+              onClick={handleAnalyzeGoal}
+              disabled={isAnalyzing}
+              className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
+              aria-label="Analyze Goal"
+            >
+              Analyze
+              {isAnalyzing ? (
+                <div className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              )}
+            </Button>
+          </div>
+        </div>
+
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
             size="lg"
