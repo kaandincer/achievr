@@ -53,6 +53,21 @@ serve(async (req) => {
       });
     } else {
       thread = { id: threadId };
+      
+      // For subsequent steps, add the user's previous answer and prepare for next step
+      console.log('Adding user response for step', step);
+      const prevAnswer = previousAnswers[step - 1];
+      const stepInstructions = {
+        2: "Now, help me make this goal measurable.",
+        3: "Next, help me make this goal achievable.",
+        4: "Let's make this goal relevant.",
+        5: "Finally, help me make this goal time-bound."
+      };
+      
+      await openai.beta.threads.messages.create(thread.id, {
+        role: "user",
+        content: `My answer for the previous step: ${prevAnswer}. ${stepInstructions[step as keyof typeof stepInstructions]}`
+      });
     }
 
     // Run the assistant
