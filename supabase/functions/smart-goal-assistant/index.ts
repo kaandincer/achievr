@@ -28,37 +28,58 @@ serve(async (req) => {
       throw new Error('No goal provided');
     }
 
-    // Use Chat Completions API for goal analysis
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are a SMART goal expert. Analyze the user's goal and provide specific guidance on making it SMART:
-          1. Specific: What exactly needs to be accomplished?
-          2. Measurable: How will progress and success be measured?
-          3. Achievable: Is this realistic with available resources?
-          4. Relevant: Why is this goal important?
-          5. Time-bound: What's the deadline?
-          
-          Format your response with clear sections for each SMART component.`
-        },
-        {
-          role: "user",
-          content: `Help me make this goal SMART: ${goal}`
-        }
-      ]
+    // Create a thread
+    const thread = await openai.beta.threads.create();
+    console.log('Created thread:', thread.id);
+
+    // Add a message to the thread
+    await openai.beta.threads.messages.create(thread.id, {
+      role: "user",
+      content: `Help me make this goal SMART: ${goal}`
     });
 
-    const response = completion.choices[0].message.content;
-    console.log('Generated response:', response);
+    // Run the assistant
+    const run = await openai.beta.threads.runs.create(thread.id, {
+      assistant_id: "asst_abc123", // Replace with your actual assistant ID
+      instructions: `Analyze the user's goal and provide specific guidance on making it SMART:
+      1. Specific: What exactly needs to be accomplished?
+      2. Measurable: How will progress and success be measured?
+      3. Achievable: Is this realistic with available resources?
+      4. Relevant: Why is this goal important?
+      5. Time-bound: What's the deadline?
+      
+      Format your response with clear sections for each SMART component.`
+    });
 
-    return new Response(
-      JSON.stringify({ response }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    // Poll for the run to complete
+    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    
+    while (runStatus.status === "queued" || runStatus.status === "in_progress") {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      console.log('Run status:', runStatus.status);
+    }
+
+    if (runStatus.status === "completed") {
+      // Get the messages
+      const messages = await openai.beta.threads.messages.list(thread.id);
+      const lastMessage = messages.data[0];
+      const response = lastMessage.content[0].text.value;
+
+      console.log('Generated response:', response);
+
+      return new Response(
+        JSON.stringify({ 
+          response,
+          threadId: thread.id
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } else {
+      throw new Error(`Run ended with status: ${runStatus.status}`);
+    }
 
   } catch (error) {
     console.error('Error in smart-goal-assistant function:', error);
