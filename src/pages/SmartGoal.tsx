@@ -26,6 +26,16 @@ const questions: Question[] = [
     label: "Make your goal achievable",
     placeholder: "What steps will you take to achieve this goal?",
   },
+  {
+    id: 4,
+    label: "Make your goal relevant",
+    placeholder: "Why is this goal important to you and your overall objectives?",
+  },
+  {
+    id: 5,
+    label: "Make your goal time-bound",
+    placeholder: "When do you want to achieve this goal by?",
+  },
 ];
 
 const SmartGoal = () => {
@@ -37,6 +47,8 @@ const SmartGoal = () => {
     1: "",
     2: "",
     3: "",
+    4: "",
+    5: "",
   });
 
   const handleInputChange = (value: string) => {
