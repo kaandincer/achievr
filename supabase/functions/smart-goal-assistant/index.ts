@@ -16,62 +16,75 @@ serve(async (req) => {
   }
 
   try {
-    const { title } = await req.json();
+    const { conversationId, goal, step, userInput } = await req.json();
     
-    if (!title || typeof title !== 'string' || title.trim() === '') {
-      throw new Error('No goal provided');
+    if (!conversationId) {
+      throw new Error('No conversation ID provided');
     }
 
-    console.log('Analyzing goal:', title);
+    console.log('Processing request:', { conversationId, goal, step, userInput });
 
-    // Create a thread
-    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({})
-    });
+    // Create a thread if this is the first step
+    let threadId;
+    if (step === 'S' && goal) {
+      console.log('Creating new thread for initial goal');
+      const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({})
+      });
 
-    if (!threadResponse.ok) {
-      throw new Error(`Failed to create thread: ${await threadResponse.text()}`);
+      if (!threadResponse.ok) {
+        throw new Error(`Failed to create thread: ${await threadResponse.text()}`);
+      }
+
+      const thread = await threadResponse.json();
+      threadId = thread.id;
+      console.log('Created thread:', threadId);
+
+      // Add initial message about the goal
+      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `I want to make this goal SMART: "${goal}". Let's start with making it Specific. Ask me questions to help make this goal more specific.`
+        })
+      });
+    } else {
+      // For subsequent steps, we need to add the user's input and request the next step
+      const stepMessages = {
+        'M': "Now, let's make this goal Measurable. Ask me questions about how we can measure progress towards this goal.",
+        'A': "Let's ensure this goal is Achievable. Ask me questions about the resources, skills, and support needed to achieve this goal.",
+        'R': "Now, let's make sure this goal is Relevant. Ask me questions about how this goal aligns with my broader objectives and values.",
+        'T': "Finally, let's make this goal Time-bound. Ask me questions about the timeline and deadlines for achieving this goal."
+      };
+
+      // Add user's response and request next step
+      await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({
+          role: 'user',
+          content: `My answer: ${userInput}\n\n${stepMessages[step]}`
+        })
+      });
     }
-
-    const thread = await threadResponse.json();
-    console.log('Created thread:', thread.id);
-
-    // Add a message to the thread
-    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-        'OpenAI-Beta': 'assistants=v2'
-      },
-      body: JSON.stringify({
-        role: 'user',
-        content: `Please analyze this goal and make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound):
-          
-          Goal: ${title}
-          
-          Please provide:
-          1. An assessment of how SMART this goal currently is
-          2. A revised SMART version of the goal
-          3. Specific suggestions for measuring progress
-          4. Potential milestones or deadlines
-          5. Any potential challenges to consider`
-      })
-    });
-
-    if (!messageResponse.ok) {
-      throw new Error(`Failed to create message: ${await messageResponse.text()}`);
-    }
-    console.log('Added message to thread');
 
     // Run the assistant
-    const runResponse = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -90,7 +103,7 @@ serve(async (req) => {
     const run = await runResponse.json();
     console.log('Started run:', run.id);
 
-    // Poll for completion with a maximum number of attempts
+    // Poll for completion
     const maxAttempts = 30;
     let attempts = 0;
     let runStatus;
@@ -103,7 +116,7 @@ serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const statusResponse = await fetch(
-        `https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`,
+        `https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`,
         {
           headers: {
             'Authorization': `Bearer ${openAIApiKey}`,
@@ -127,7 +140,7 @@ serve(async (req) => {
 
     // Get the messages
     const messagesResponse = await fetch(
-      `https://api.openai.com/v1/threads/${thread.id}/messages`,
+      `https://api.openai.com/v1/threads/${threadId}/messages`,
       {
         headers: {
           'Authorization': `Bearer ${openAIApiKey}`,
@@ -141,10 +154,10 @@ serve(async (req) => {
     }
 
     const messages = await messagesResponse.json();
-    const analysis = messages.data[0].content[0].text.value;
+    const response = messages.data[0].content[0].text.value;
 
     return new Response(
-      JSON.stringify({ analysis }),
+      JSON.stringify({ response }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
