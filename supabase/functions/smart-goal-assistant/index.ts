@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,44 +17,54 @@ serve(async (req) => {
 
   try {
     const { goal, step, previousAnswers } = await req.json();
-
-    let systemPrompt = "You are an AI assistant helping users create SMART goals. Guide them through each step (Specific, Measurable, Achievable, Relevant, Time-bound) one at a time. Ask thoughtful questions to help them refine their goal. Be concise but encouraging.";
     
-    let userPrompt = `Original goal: ${goal}\nCurrent step: ${step}\n`;
-    if (Object.keys(previousAnswers).length > 0) {
-      userPrompt += `Previous answers:\n`;
-      for (const [key, value] of Object.entries(previousAnswers)) {
-        if (Number(key) < step) {
-          userPrompt += `Step ${key}: ${value}\n`;
-        }
+    const openai = new OpenAI({
+      apiKey: openAIApiKey,
+    });
+
+    // Create a thread if it's the first step
+    let threadId = '';
+    if (step === 1) {
+      const thread = await openai.beta.threads.create();
+      threadId = thread.id;
+      
+      // Add the initial message with the goal
+      await openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: `My goal is: ${goal}. Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound).`
+      });
+    } else {
+      // For subsequent steps, add the user's previous answer
+      const prevAnswer = previousAnswers[step - 1];
+      await openai.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: prevAnswer
+      });
+    }
+
+    // Run the assistant
+    const run = await openai.beta.threads.runs.create(threadId, {
+      assistant_id: assistantId,
+    });
+
+    // Wait for the run to complete
+    let runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+    while (runStatus.status !== 'completed') {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+      
+      if (runStatus.status === 'failed') {
+        throw new Error('Assistant run failed');
       }
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to get AI response');
-    }
-
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
+    // Get the latest message from the assistant
+    const messages = await openai.beta.threads.messages.list(threadId);
+    const lastMessage = messages.data[0];
+    const response = lastMessage.content[0].text.value;
 
     return new Response(
-      JSON.stringify({ response: aiResponse }),
+      JSON.stringify({ response, threadId }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },

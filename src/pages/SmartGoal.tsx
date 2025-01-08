@@ -55,6 +55,7 @@ const SmartGoal = () => {
   });
   const [aiResponse, setAiResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [threadId, setThreadId] = useState<string>("");
 
   const getAIResponse = async (step: number) => {
     setIsLoading(true);
@@ -64,6 +65,7 @@ const SmartGoal = () => {
           goal: originalGoal,
           step,
           previousAnswers: answers,
+          threadId,
         },
       });
 
@@ -72,6 +74,9 @@ const SmartGoal = () => {
       }
 
       setAiResponse(response.data.response);
+      if (response.data.threadId) {
+        setThreadId(response.data.threadId);
+      }
     } catch (error) {
       console.error("Error getting AI response:", error);
       toast({
