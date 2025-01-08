@@ -31,6 +31,9 @@ serve(async (req) => {
     
     const openai = new OpenAI({
       apiKey: openAIApiKey,
+      defaultHeaders: {
+        'OpenAI-Beta': 'assistants=v2'
+      }
     });
 
     // Create a thread if it's the first step
