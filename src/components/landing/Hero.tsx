@@ -79,26 +79,28 @@ export const Hero = () => {
           </div>
         </div>
 
-        <nav className="flex flex-col sm:flex-row gap-4 justify-center mt-8" aria-label="Primary">
-          <Button
-            size="lg"
-            variant="outline"
-            className="border-sage-500 text-sage-600 hover:bg-sage-50"
-            onClick={scrollToFeatures}
-            aria-label="Learn More about Achievr"
-          >
-            Learn More
-          </Button>
-          <Button
-            size="lg"
-            className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
-            onClick={openSignupDialog}
-            aria-label="Join the Waitlist"
-          >
-            Join the Waitlist
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-          </Button>
-        </nav>
+        <div className="absolute bottom-8 left-0 right-0">
+          <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-sage-500 text-sage-600 hover:bg-sage-50"
+              onClick={scrollToFeatures}
+              aria-label="Learn More about Achievr"
+            >
+              Learn More
+            </Button>
+            <Button
+              size="lg"
+              className="bg-sage-500 hover:bg-sage-600 text-white transition-all duration-300"
+              onClick={openSignupDialog}
+              aria-label="Join the Waitlist"
+            >
+              Join the Waitlist
+              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Button>
+          </nav>
+        </div>
       </div>
     </section>
   );
