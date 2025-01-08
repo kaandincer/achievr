@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,10 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
+    if (!assistantId) {
+      throw new Error('OpenAI Assistant ID is not configured');
+    }
+
     const { goal } = await req.json();
     console.log('Received goal:', goal);
 
@@ -29,41 +34,60 @@ serve(async (req) => {
       throw new Error('No goal provided');
     }
 
-    // Initialize OpenAI client
+    // Initialize OpenAI client with v2 beta header
     const openai = new OpenAI({
-      apiKey: openAIApiKey
+      apiKey: openAIApiKey,
+      defaultHeaders: {
+        'OpenAI-Beta': 'assistants=v2'
+      }
     });
 
-    console.log('Calling OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `You are a SMART goal analysis assistant. Help users transform their goals into SMART goals by analyzing them across these dimensions:
-          - Specific: What exactly needs to be accomplished?
-          - Measurable: How will progress and success be measured?
-          - Achievable: Is this realistic with available resources?
-          - Relevant: Why is this goal important?
-          - Time-bound: What's the deadline?
-          
-          Provide clear, actionable feedback for each dimension.`
-        },
-        {
-          role: "user",
-          content: `Help me make this goal SMART: ${goal}`
-        }
-      ],
-      temperature: 0.7,
+    console.log('Creating thread...');
+    const thread = await openai.beta.threads.create();
+    console.log('Thread created:', thread.id);
+
+    console.log('Adding message to thread...');
+    await openai.beta.threads.messages.create(thread.id, {
+      role: "user",
+      content: `Help me make this goal SMART: ${goal}`
     });
 
-    const response = completion.choices[0].message.content;
-    console.log('Generated response:', response);
+    console.log('Running assistant...');
+    const run = await openai.beta.threads.runs.create(thread.id, {
+      assistant_id: assistantId
+    });
+
+    console.log('Waiting for assistant response...');
+    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+    let attempts = 0;
+    const maxAttempts = 30; // Maximum number of attempts (30 * 1 second = 30 seconds timeout)
+
+    while (runStatus.status !== 'completed' && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      attempts++;
+      console.log(`Checking run status (${attempts}/${maxAttempts}):`, runStatus.status);
+    }
+
+    if (runStatus.status !== 'completed') {
+      throw new Error('Assistant response timed out');
+    }
+
+    console.log('Retrieving messages...');
+    const messages = await openai.beta.threads.messages.list(thread.id);
+    const assistantMessage = messages.data.find(msg => msg.role === 'assistant');
+
+    if (!assistantMessage) {
+      throw new Error('No assistant response found');
+    }
+
+    const response = assistantMessage.content[0].text.value;
+    console.log('Assistant response:', response);
 
     return new Response(
       JSON.stringify({ 
         response,
-        threadId: null // We don't use threads anymore
+        threadId: thread.id
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
