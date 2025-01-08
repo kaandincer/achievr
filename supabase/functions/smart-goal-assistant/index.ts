@@ -56,7 +56,7 @@ serve(async (req) => {
       
       // For subsequent steps, add the user's previous answer and prepare for next step
       console.log('Adding user response for step', step);
-      const prevAnswer = previousAnswers[step - 1];
+      const currentStepAnswer = previousAnswers[step - 1];
       const stepInstructions = {
         2: "Now, help me make this goal measurable.",
         3: "Next, help me make this goal achievable.",
@@ -66,7 +66,7 @@ serve(async (req) => {
       
       await openai.beta.threads.messages.create(thread.id, {
         role: "user",
-        content: `My answer for the previous step: ${prevAnswer}. ${stepInstructions[step as keyof typeof stepInstructions]}`
+        content: `My answer for the previous step: ${currentStepAnswer}. ${stepInstructions[step as keyof typeof stepInstructions]}`
       });
     }
 
