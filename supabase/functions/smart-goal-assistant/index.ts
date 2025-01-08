@@ -28,8 +28,8 @@ serve(async (req) => {
     }
 
     const { goal, step, previousAnswers, threadId } = await req.json();
-    console.log('Received request:', { step, threadId, hasGoal: !!goal });
-    
+    console.log('Received request:', { goal, step, threadId });
+
     // Initialize OpenAI client with v2 header
     const openai = new OpenAI({
       apiKey: openAIApiKey,
@@ -38,93 +38,89 @@ serve(async (req) => {
       }
     });
 
-    // Create a thread if it's the first step
     let thread;
     if (!threadId) {
+      // Create a new thread for the initial goal
       console.log('Creating new thread');
       thread = await openai.beta.threads.create();
       console.log('Thread created:', thread.id);
-      
-      // Add the initial message with the goal
-      console.log('Adding initial message');
+
+      // Add the initial message about the goal
       await openai.beta.threads.messages.create(thread.id, {
         role: "user",
-        content: `My goal is: ${goal}. Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). For step 1, help me make it specific.`
+        content: `I want to achieve this goal: "${goal}". Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). For step 1, help me make it specific.`
       });
     } else {
       thread = { id: threadId };
       
       // For subsequent steps, add the user's previous answer and prepare for next step
-      console.log('Adding user response for step', step);
-      const currentStepAnswer = previousAnswers[step - 1];
-      const stepInstructions = {
+      const stepMessages = {
         2: "Now, help me make this goal measurable.",
         3: "Next, help me make this goal achievable.",
         4: "Let's make this goal relevant.",
         5: "Finally, help me make this goal time-bound."
       };
       
-      await openai.beta.threads.messages.create(thread.id, {
-        role: "user",
-        content: `My answer for the previous step: ${currentStepAnswer}. ${stepInstructions[step as keyof typeof stepInstructions]}`
-      });
+      if (step > 1 && previousAnswers) {
+        const prevAnswer = previousAnswers[step - 1];
+        await openai.beta.threads.messages.create(thread.id, {
+          role: "user",
+          content: `My answer for the previous step: "${prevAnswer}". ${stepMessages[step as keyof typeof stepMessages]}`
+        });
+      }
     }
 
     // Run the assistant
     console.log('Starting assistant run');
     const run = await openai.beta.threads.runs.create(
-      thread.id, 
+      thread.id,
       { assistant_id: assistantId }
     );
 
     // Wait for the run to complete
-    console.log('Waiting for run to complete');
     let runStatus = await openai.beta.threads.runs.retrieve(
-      thread.id, 
+      thread.id,
       run.id
     );
-    
+
     while (runStatus.status !== 'completed') {
       console.log('Run status:', runStatus.status);
       if (runStatus.status === 'failed') {
-        console.error('Run failed:', runStatus);
         throw new Error('Assistant run failed');
       }
       if (runStatus.status === 'requires_action') {
-        console.error('Run requires action:', runStatus);
-        throw new Error('Assistant requires action - not supported in this implementation');
+        throw new Error('Assistant requires action - not supported');
       }
       
-      // Wait a second before checking again
+      // Wait before checking again
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(
-        thread.id, 
+        thread.id,
         run.id
       );
     }
 
     // Get the latest message from the assistant
-    console.log('Getting assistant response');
     const messages = await openai.beta.threads.messages.list(
       thread.id
     );
-    
+
     if (!messages.data || messages.data.length === 0) {
       throw new Error('No response received from assistant');
     }
-    
+
     const lastMessage = messages.data[0];
     const response = lastMessage.content[0].text.value;
-    console.log('Got response from assistant:', response);
+    console.log('Assistant response:', response);
 
     return new Response(
       JSON.stringify({ 
-        response, 
-        threadId: thread.id 
+        response,
+        threadId: thread.id
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      }
     );
   } catch (error) {
     console.error('Error in smart-goal-assistant function:', error);
@@ -136,7 +132,7 @@ serve(async (req) => {
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      }
     );
   }
 });
