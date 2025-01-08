@@ -16,20 +16,19 @@ serve(async (req) => {
   }
 
   try {
-    const { goal, step, previousAnswers } = await req.json();
+    const { goal, step, previousAnswers, threadId } = await req.json();
     
     const openai = new OpenAI({
       apiKey: openAIApiKey,
     });
 
     // Create a thread if it's the first step
-    let threadId = '';
+    let thread;
     if (step === 1) {
-      const thread = await openai.beta.threads.create();
-      threadId = thread.id;
+      thread = await openai.beta.threads.create();
       
       // Add the initial message with the goal
-      await openai.beta.threads.messages.create(threadId, {
+      await openai.beta.threads.messages.create(thread.id, {
         role: "user",
         content: `My goal is: ${goal}. Help me make it SMART (Specific, Measurable, Achievable, Relevant, Time-bound).`
       });
@@ -43,15 +42,25 @@ serve(async (req) => {
     }
 
     // Run the assistant
-    const run = await openai.beta.threads.runs.create(threadId, {
-      assistant_id: assistantId,
-    });
+    const run = await openai.beta.threads.runs.create(
+      threadId || thread.id, 
+      {
+        assistant_id: assistantId,
+      }
+    );
 
     // Wait for the run to complete
-    let runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+    let runStatus = await openai.beta.threads.runs.retrieve(
+      threadId || thread.id, 
+      run.id
+    );
+    
     while (runStatus.status !== 'completed') {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(threadId, run.id);
+      runStatus = await openai.beta.threads.runs.retrieve(
+        threadId || thread.id, 
+        run.id
+      );
       
       if (runStatus.status === 'failed') {
         throw new Error('Assistant run failed');
@@ -59,12 +68,17 @@ serve(async (req) => {
     }
 
     // Get the latest message from the assistant
-    const messages = await openai.beta.threads.messages.list(threadId);
+    const messages = await openai.beta.threads.messages.list(
+      threadId || thread.id
+    );
     const lastMessage = messages.data[0];
     const response = lastMessage.content[0].text.value;
 
     return new Response(
-      JSON.stringify({ response, threadId }),
+      JSON.stringify({ 
+        response, 
+        threadId: threadId || thread.id 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
