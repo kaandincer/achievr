@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import QuestionStep from "@/components/smart-goal/QuestionStep";
+import AIResponse from "@/components/smart-goal/AIResponse";
+import ProgressIndicator from "@/components/smart-goal/ProgressIndicator";
 
 type Question = {
   id: number;
@@ -50,6 +53,9 @@ const SmartGoal = () => {
     4: "",
     5: "",
   });
+  const [aiResponse, setAiResponse] = useState("");
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (value: string) => {
     setAnswers((prev) => ({
@@ -58,9 +64,37 @@ const SmartGoal = () => {
     }));
   };
 
-  const handleNext = () => {
-    if (currentStep < questions.length) {
-      setCurrentStep((prev) => prev + 1);
+  const analyzeWithAI = async (input: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
+        body: {
+          goal: input,
+          step: currentStep,
+          threadId: threadId,
+        },
+      });
+
+      if (error) throw error;
+
+      setAiResponse(data.response);
+      setThreadId(data.threadId);
+    } catch (error) {
+      console.error('Error analyzing goal:', error);
+      toast.error('Failed to analyze goal. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (answers[currentStep as keyof typeof answers]) {
+      await analyzeWithAI(answers[currentStep as keyof typeof answers]);
+      if (currentStep < questions.length) {
+        setCurrentStep((prev) => prev + 1);
+      }
+    } else {
+      toast.error('Please provide an answer before continuing.');
     }
   };
 
@@ -85,53 +119,38 @@ const SmartGoal = () => {
         </div>
 
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
-          {questions.map((question) => (
-            <div
-              key={question.id}
-              className={cn(
-                "space-y-4 transition-all duration-300",
-                currentStep === question.id
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4 hidden"
-              )}
-            >
-              <label className="block text-lg font-medium text-gray-900">
-                {question.label}
-              </label>
-              <Input
-                value={answers[question.id as keyof typeof answers]}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={question.placeholder}
-                className="w-full text-lg p-4"
-              />
-            </div>
-          ))}
+          <QuestionStep
+            question={questions[currentStep - 1]}
+            value={answers[currentStep as keyof typeof answers]}
+            onChange={handleInputChange}
+          />
+          
+          <AIResponse response={aiResponse} />
         </div>
 
         <div className="flex justify-center gap-4">
-          <Button onClick={handleBack} variant="outline">
+          <Button 
+            onClick={handleBack} 
+            variant="outline"
+            disabled={isLoading}
+          >
             {currentStep === 1 ? "Back to Home" : "Previous"}
           </Button>
           {currentStep < questions.length && (
-            <Button onClick={handleNext} className="bg-sage-600 hover:bg-sage-700">
-              Next
+            <Button 
+              onClick={handleNext}
+              className="bg-sage-600 hover:bg-sage-700"
+              disabled={isLoading}
+            >
+              {isLoading ? "Analyzing..." : "Next"}
             </Button>
           )}
         </div>
 
-        <div className="flex justify-center gap-2">
-          {questions.map((question) => (
-            <div
-              key={question.id}
-              className={cn(
-                "w-3 h-3 rounded-full",
-                currentStep === question.id
-                  ? "bg-sage-600"
-                  : "bg-gray-200"
-              )}
-            />
-          ))}
-        </div>
+        <ProgressIndicator 
+          totalSteps={questions.length} 
+          currentStep={currentStep} 
+        />
       </div>
     </div>
   );
