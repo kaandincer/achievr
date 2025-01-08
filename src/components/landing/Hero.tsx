@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Hero = () => {
   const { openSignupDialog } = useSignupDialog();
@@ -20,10 +21,24 @@ export const Hero = () => {
 
     setIsAnalyzing(true);
     try {
-      // Navigate to the SMART goal page with the entered goal
-      navigate("/smart-goal", { state: { goal: goal.trim() } });
+      // Call the smart-goal-assistant function
+      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
+        body: { goal: goal.trim() }
+      });
+
+      if (error) throw error;
+
+      // Navigate to the SMART goal page with both the goal and AI response
+      navigate("/smart-goal", { 
+        state: { 
+          goal: goal.trim(),
+          aiResponse: data.response,
+          threadId: data.threadId
+        } 
+      });
     } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      console.error('Error analyzing goal:', error);
+      toast.error("Something went wrong while analyzing your goal. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }

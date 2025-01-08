@@ -18,60 +18,47 @@ const openai = new OpenAI({
 });
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { goal, step, threadId } = await req.json();
-    console.log('Received request:', { goal, step, threadId });
+    const { goal } = await req.json();
+    console.log('Received goal:', goal);
 
-    let currentThreadId = threadId;
+    // Create a thread
+    const thread = await openai.beta.threads.create();
+    console.log('Created thread:', thread.id);
 
-    // If no thread exists, create a new one
-    if (!currentThreadId) {
-      const thread = await openai.beta.threads.create();
-      currentThreadId = thread.id;
-      console.log('Created new thread:', currentThreadId);
-    }
-
-    // Add the user's message to the thread
-    const message = step === 1 
-      ? `My goal is: ${goal}. Help me make this a SMART goal. First, let's make it specific.`
-      : goal;
-
-    await openai.beta.threads.messages.create(currentThreadId, {
+    // Add a message to the thread
+    await openai.beta.threads.messages.create(thread.id, {
       role: "user",
-      content: message
+      content: `Help me make this goal SMART (Specific, Measurable, Achievable, Relevant, Time-bound): ${goal}`
     });
 
     // Run the assistant
-    const run = await openai.beta.threads.runs.create(currentThreadId, {
+    const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId!,
     });
 
     // Wait for the completion
-    let runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
-    
+    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     while (runStatus.status !== "completed") {
       if (runStatus.status === "failed") {
         throw new Error("Assistant run failed");
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(currentThreadId, run.id);
+      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     }
 
     // Get the assistant's response
-    const messages = await openai.beta.threads.messages.list(currentThreadId);
+    const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data[0];
-
-    console.log('Assistant response:', lastMessage);
 
     return new Response(
       JSON.stringify({
         response: lastMessage.content[0].text.value,
-        threadId: currentThreadId,
+        threadId: thread.id,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
