@@ -9,7 +9,9 @@ const AIResponse = ({ response }: AIResponseProps) => {
 
   return (
     <Card className="p-6 bg-sage-50 border-sage-200">
-      <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
+      <div className="prose prose-sage max-w-none">
+        <p className="text-gray-700 whitespace-pre-wrap">{response}</p>
+      </div>
     </Card>
   );
 };

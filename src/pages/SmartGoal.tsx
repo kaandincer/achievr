@@ -45,6 +45,7 @@ const SmartGoal = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const originalGoal = location.state?.goal || "";
+  const aiResponse = location.state?.aiResponse || "";
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState({
     1: "",
@@ -53,8 +54,6 @@ const SmartGoal = () => {
     4: "",
     5: "",
   });
-  const [aiResponse, setAiResponse] = useState("");
-  const [threadId, setThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (value: string) => {
@@ -64,32 +63,8 @@ const SmartGoal = () => {
     }));
   };
 
-  const analyzeWithAI = async (input: string) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('smart-goal-assistant', {
-        body: {
-          goal: input,
-          step: currentStep,
-          threadId: threadId,
-        },
-      });
-
-      if (error) throw error;
-
-      setAiResponse(data.response);
-      setThreadId(data.threadId);
-    } catch (error) {
-      console.error('Error analyzing goal:', error);
-      toast.error('Failed to analyze goal. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleNext = async () => {
     if (answers[currentStep as keyof typeof answers]) {
-      await analyzeWithAI(answers[currentStep as keyof typeof answers]);
       if (currentStep < questions.length) {
         setCurrentStep((prev) => prev + 1);
       }
@@ -118,14 +93,19 @@ const SmartGoal = () => {
           </p>
         </div>
 
+        {aiResponse && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4">AI Analysis</h2>
+            <AIResponse response={aiResponse} />
+          </div>
+        )}
+
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           <QuestionStep
             question={questions[currentStep - 1]}
             value={answers[currentStep as keyof typeof answers]}
             onChange={handleInputChange}
           />
-          
-          <AIResponse response={aiResponse} />
         </div>
 
         <div className="flex justify-center gap-4">
@@ -142,7 +122,7 @@ const SmartGoal = () => {
               className="bg-sage-600 hover:bg-sage-700"
               disabled={isLoading}
             >
-              {isLoading ? "Analyzing..." : "Next"}
+              {isLoading ? "Processing..." : "Next"}
             </Button>
           )}
         </div>

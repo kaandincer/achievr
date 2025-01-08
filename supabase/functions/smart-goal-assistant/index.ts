@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://deno.land/x/openai@v4.24.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,20 +21,27 @@ serve(async (req) => {
   }
 
   try {
-    const { goal, threadId } = await req.json();
+    const { goal } = await req.json();
     console.log('Received goal:', goal);
 
     if (!goal) {
       throw new Error('No goal provided');
     }
 
-    // Instead of using the Assistants API, let's use the Chat Completions API
+    // Use Chat Completions API for goal analysis
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are a SMART goal expert. Analyze the user's goal and provide specific guidance on making it SMART (Specific, Measurable, Achievable, Relevant, Time-bound). Give clear, actionable feedback."
+          content: `You are a SMART goal expert. Analyze the user's goal and provide specific guidance on making it SMART:
+          1. Specific: What exactly needs to be accomplished?
+          2. Measurable: How will progress and success be measured?
+          3. Achievable: Is this realistic with available resources?
+          4. Relevant: Why is this goal important?
+          5. Time-bound: What's the deadline?
+          
+          Format your response with clear sections for each SMART component.`
         },
         {
           role: "user",
@@ -48,10 +54,7 @@ serve(async (req) => {
     console.log('Generated response:', response);
 
     return new Response(
-      JSON.stringify({
-        response,
-        threadId: null // Since we're not using threads anymore
-      }),
+      JSON.stringify({ response }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
