@@ -1,12 +1,12 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSignupDialog } from "./SignupDialog";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
-  const { openSignupDialog } = useSignupDialog();
+  const navigate = useNavigate();
   const [goal, setGoal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -18,11 +18,9 @@ export const Hero = () => {
 
     setIsAnalyzing(true);
     try {
-      toast.success("Goal received! Join the waitlist to get personalized analysis.");
-      openSignupDialog();
+      navigate("/analysis", { state: { goal: goal.trim() } });
     } catch (error) {
       toast.error("Something went wrong. Please try again.");
-    } finally {
       setIsAnalyzing(false);
     }
   };
