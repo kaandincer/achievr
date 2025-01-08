@@ -3,13 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
   const [goal, setGoal] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const analyzeGoal = async () => {
     if (!goal.trim()) {
@@ -28,12 +26,9 @@ export const Hero = () => {
 
       if (error) throw error;
 
-      // Navigate to analysis page with the result
-      navigate('/analysis', { 
-        state: { 
-          goal,
-          analysis: data.analysis 
-        } 
+      toast({
+        title: "Analysis Complete",
+        description: data.analysis,
       });
     } catch (error) {
       console.error('Error analyzing goal:', error);
