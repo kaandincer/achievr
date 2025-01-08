@@ -18,6 +18,9 @@ serve(async (req) => {
     
     const openai = new OpenAI({
       apiKey: Deno.env.get('OPENAI_API_KEY'),
+      defaultHeaders: {
+        'OpenAI-Beta': 'assistants=v2'  // Add this header for v2 API
+      }
     });
 
     const assistantId = Deno.env.get('OPENAI_ASSISTANT_ID');
@@ -25,38 +28,45 @@ serve(async (req) => {
       throw new Error('Assistant ID not configured');
     }
 
-    // Create a thread
+    console.log('Creating thread...');
     const thread = await openai.beta.threads.create();
 
-    // Add a message to the thread
+    console.log('Adding message to thread...');
     await openai.beta.threads.messages.create(thread.id, {
       role: "user",
       content: `Please analyze this goal and provide feedback on how to make it SMARTer: ${goal}`,
     });
 
-    // Run the assistant
+    console.log('Running assistant...');
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId,
     });
 
-    // Wait for the run to complete
+    console.log('Waiting for completion...');
     let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
     
     while (runStatus.status !== "completed") {
       if (runStatus.status === "failed") {
+        console.error('Run failed:', runStatus);
         throw new Error("Assistant run failed");
+      }
+      if (runStatus.status === "expired") {
+        console.error('Run expired:', runStatus);
+        throw new Error("Assistant run expired");
       }
       
       // Wait for 1 second before checking again
       await new Promise(resolve => setTimeout(resolve, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      console.log('Current status:', runStatus.status);
     }
 
-    // Get the messages
+    console.log('Retrieving messages...');
     const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data[0];
     const analysis = lastMessage.content[0].text.value;
 
+    console.log('Analysis complete:', analysis);
     return new Response(
       JSON.stringify({ analysis }),
       { 
@@ -64,7 +74,7 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in analyze-goal function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
