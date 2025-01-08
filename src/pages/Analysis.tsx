@@ -20,19 +20,14 @@ const Analysis = () => {
 
     const analyzeGoal = async () => {
       try {
-        const response = await fetch("/api/analyze-goal", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ goal }),
+        const { data, error } = await supabase.functions.invoke('analyze-goal', {
+          body: { goal }
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to analyze goal");
+        if (error) {
+          throw new Error(error.message);
         }
 
-        const data = await response.json();
         setAnalysis(data.analysis);
       } catch (error) {
         console.error("Error analyzing goal:", error);
