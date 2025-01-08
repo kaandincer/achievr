@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 type Question = {
   id: number;
@@ -41,6 +43,7 @@ const questions: Question[] = [
 const SmartGoal = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const originalGoal = location.state?.goal || "";
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState({
@@ -50,6 +53,45 @@ const SmartGoal = () => {
     4: "",
     5: "",
   });
+  const [aiResponse, setAiResponse] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const getAIResponse = async (step: number) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_PROJECT_URL}/functions/v1/smart-goal-assistant`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            goal: originalGoal,
+            step,
+            previousAnswers: answers,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+      setAiResponse(data.response);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      toast({
+        title: "Error",
+        description: "Failed to get AI guidance. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (value: string) => {
     setAnswers((prev) => ({
@@ -58,9 +100,11 @@ const SmartGoal = () => {
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < questions.length) {
-      setCurrentStep((prev) => prev + 1);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      await getAIResponse(nextStep);
     }
   };
 
@@ -71,6 +115,11 @@ const SmartGoal = () => {
       navigate("/");
     }
   };
+
+  // Get initial AI response when component mounts
+  useState(() => {
+    getAIResponse(1);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white p-4">
@@ -83,6 +132,12 @@ const SmartGoal = () => {
             Your goal: "{originalGoal}"
           </p>
         </div>
+
+        {aiResponse && (
+          <div className="bg-sage-50 p-6 rounded-lg border border-sage-200">
+            <p className="text-sage-800">{aiResponse}</p>
+          </div>
+        )}
 
         <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm border">
           {questions.map((question) => (
@@ -109,12 +164,16 @@ const SmartGoal = () => {
         </div>
 
         <div className="flex justify-center gap-4">
-          <Button onClick={handleBack} variant="outline">
+          <Button onClick={handleBack} variant="outline" disabled={isLoading}>
             {currentStep === 1 ? "Back to Home" : "Previous"}
           </Button>
           {currentStep < questions.length && (
-            <Button onClick={handleNext} className="bg-sage-600 hover:bg-sage-700">
-              Next
+            <Button 
+              onClick={handleNext} 
+              className="bg-sage-600 hover:bg-sage-700"
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : "Next"}
             </Button>
           )}
         </div>
