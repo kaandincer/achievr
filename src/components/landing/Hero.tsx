@@ -28,7 +28,7 @@ export const Hero = () => {
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
             size="lg"
-            className="bg-[#f9f8f6] hover:bg-white text-[#27425e] transition-all duration-300"
+            className="bg-[#27425e] hover:bg-[#27425e]/90 text-white transition-all duration-300"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
           >
