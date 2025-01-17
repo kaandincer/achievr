@@ -2,6 +2,6 @@
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
   <ShortName>Plio</ShortName>
   <Description>Post-Run Recovery App with Rewards</Description>
-  <Image width="16" height="16" type="image/svg+xml">data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23527fb8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><circle cx='12' cy='12' r='6'/><circle cx='12' cy='12' r='2'/></svg></Image>
+  <Image width="16" height="16" type="image/png">/lovable-uploads/2afe7176-8fe3-4c1a-a71f-841123815e50.png</Image>
   <Url type="text/html" template="https://plioapp.com/search?q={searchTerms}"/>
 </OpenSearchDescription>
