@@ -38,7 +38,7 @@ export const Hero = () => {
           <Button
             size="lg"
             variant="outline"
-            className="border-[#f9f8f6] text-[#f9f8f6] hover:bg-[#f9f8f6]/10"
+            className="border-2 border-[#f9f8f6] text-[#f9f8f6] hover:bg-[#f9f8f6] hover:text-[#527fb8] font-medium shadow-lg transition-all duration-300"
             onClick={scrollToFeatures}
             aria-label="Learn More about Plio"
           >
