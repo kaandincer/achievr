@@ -28,7 +28,7 @@ export const Hero = () => {
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
             size="lg"
-            className="bg-[#27425e] hover:bg-[#27425e]/90 text-white transition-all duration-300"
+            className="bg-[#f9f8f6] hover:bg-white text-[#27425e] transition-all duration-300"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
           >
@@ -38,7 +38,7 @@ export const Hero = () => {
           <Button
             size="lg"
             variant="outline"
-            className="border-2 border-[#f9f8f6] text-[#f9f8f6] hover:bg-[#f9f8f6] hover:text-[#527fb8] font-medium shadow-lg transition-all duration-300"
+            className="border-2 border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white font-medium shadow-lg transition-all duration-300"
             onClick={scrollToFeatures}
             aria-label="Learn More about Plio"
           >
