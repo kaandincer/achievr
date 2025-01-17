@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useSignupDialog } from "@/components/landing/SignupDialog";
-import { Link } from "react-router-dom";
 
 export const Navbar = () => {
   const { openSignupDialog } = useSignupDialog();
@@ -15,11 +14,6 @@ export const Navbar = () => {
             <span className="text-2xl font-bold text-sage-600">Achievr</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
-            </Link>
             <Button size="sm" className="gap-2" onClick={openSignupDialog}>
               <ArrowRight className="w-4 h-4" />
               Join the Waitlist
