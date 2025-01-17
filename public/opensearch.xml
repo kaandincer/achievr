@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-  <ShortName>Achievr</ShortName>
-  <Description>AI-Powered Goal Achievement Platform</Description>
-  <Image width="16" height="16" type="image/svg+xml">data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><circle cx='12' cy='12' r='6'/><circle cx='12' cy='12' r='2'/></svg></Image>
-  <Url type="text/html" template="https://achievrapp.com/search?q={searchTerms}"/>
+  <ShortName>Plio</ShortName>
+  <Description>Post-Run Recovery App with Rewards</Description>
+  <Image width="16" height="16" type="image/svg+xml">data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23527fb8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><circle cx='12' cy='12' r='6'/><circle cx='12' cy='12' r='2'/></svg></Image>
+  <Url type="text/html" template="https://plioapp.com/search?q={searchTerms}"/>
 </OpenSearchDescription>
