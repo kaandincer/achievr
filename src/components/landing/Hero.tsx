@@ -16,7 +16,7 @@ export const Hero = () => {
     <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-[#527fb8]" role="banner">
       <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-up">
         <header className="space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f9f8f6]">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f9f8f6]/90">
             Make Recovery{" "}
             <span className="text-white">Fun & Rewarding</span>
           </h1>
