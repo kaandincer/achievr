@@ -13,14 +13,14 @@ export const Hero = () => {
   };
 
   return (
-    <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-[#527fb8]" role="banner">
+    <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-white" role="banner">
       <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-up">
         <header className="space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f9f8f6]">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#27425e]">
             Make Recovery{" "}
-            <span className="text-white">Fun & Rewarding</span>
+            <span className="text-[#527fb8]">Fun & Rewarding</span>
           </h1>
-          <p className="text-lg sm:text-xl text-[#f9f8f6] max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[#27425e] max-w-2xl mx-auto">
             The first mobile app that makes post-run stretching engaging and rewarding.
             Win real cash prizes while optimizing your recovery with AI-powered routines.
           </p>
@@ -28,7 +28,7 @@ export const Hero = () => {
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
             size="lg"
-            className="bg-[#f9f8f6] hover:bg-white text-[#27425e] transition-all duration-300"
+            className="bg-[#27425e] hover:bg-[#527fb8] text-white transition-all duration-300"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
           >
@@ -38,7 +38,7 @@ export const Hero = () => {
           <Button
             size="lg"
             variant="outline"
-            className="border-2 border-[#0EA5E9] text-[#0EA5E9] hover:bg-[#0EA5E9] hover:text-white font-medium shadow-lg transition-all duration-300"
+            className="border-[#27425e] text-[#27425e] hover:bg-[#27425e] hover:text-white"
             onClick={scrollToFeatures}
             aria-label="Learn More about Plio"
           >
