@@ -27,13 +27,13 @@ export const Hero = () => {
         </header>
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
-            size="lg"
-            className="bg-[#27425e] hover:bg-[#527fb8] text-white transition-all duration-300"
+            size="sm"
+            className="gap-2 bg-[#527fb8] hover:bg-[#27425e] text-white"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
           >
+            <ArrowRight className="w-4 h-4" />
             Join the Waitlist
-            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             size="lg"
