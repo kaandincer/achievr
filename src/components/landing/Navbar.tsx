@@ -14,7 +14,6 @@ export const Navbar = () => {
               src="/lovable-uploads/d7c703c9-dd83-4c50-8e42-38dce168cd09.png" 
               alt="Plio Logo" 
               className="h-6 w-6"
-              style={{ filter: 'invert(15%) sepia(14%) saturate(1464%) hue-rotate(173deg) brightness(94%) contrast(88%)' }}
             />
             <span className="text-2xl font-bold text-[#527fb8]">Plio</span>
           </div>
