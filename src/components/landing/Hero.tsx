@@ -27,7 +27,7 @@ export const Hero = () => {
         </header>
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
-            size="sm"
+            size="lg"
             className="gap-2 bg-[#527fb8] hover:bg-[#27425e] text-white"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
