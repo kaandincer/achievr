@@ -18,7 +18,7 @@ export const Hero = () => {
         <header className="space-y-4">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f9f8f6]">
             Make Recovery{" "}
-            <span className="text-white">Fun & Rewarding</span>
+            <span className="text-[#27425e]">Fun & Rewarding</span>
           </h1>
           <p className="text-lg sm:text-xl text-[#f9f8f6] max-w-2xl mx-auto">
             The first mobile app that makes post-run stretching engaging and rewarding.
@@ -38,7 +38,7 @@ export const Hero = () => {
           <Button
             size="lg"
             variant="outline"
-            className="border-[#f9f8f6] text-[#f9f8f6] hover:bg-[#f9f8f6]/10"
+            className="border-[#f9f8f6] text-[#27425e] hover:bg-[#f9f8f6]/10"
             onClick={scrollToFeatures}
             aria-label="Learn More about Plio"
           >
