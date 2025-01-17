@@ -116,7 +116,7 @@ export const SignupDialog = () => {
           </div>
           <div className="space-y-3">
             <label className="text-sm font-medium">
-              What would motivate you to stretch and keep up with recovery alongside running?
+              What would motivate you to stretch and keep up with recovery?
             </label>
             <div className="space-y-2">
               {motivationOptions.map((option) => (
