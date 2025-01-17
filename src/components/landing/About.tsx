@@ -5,7 +5,7 @@ export const About = () => {
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 animate-fade-up">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Mission</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-[#27425e]">Our Mission</h2>
           <p className="text-[#27425e] max-w-2xl mx-auto">
             Making recovery an enjoyable and rewarding part of every runner's journey.
           </p>
@@ -28,7 +28,7 @@ export const About = () => {
                 <Target className="w-6 h-6 text-[#527fb8]" />
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Personalized Recovery</h4>
+                <h4 className="font-semibold mb-2 text-[#27425e]">Personalized Recovery</h4>
                 <p className="text-[#27425e]">Our AI adapts your stretching routine based on your specific workout and recovery needs.</p>
               </div>
             </div>
@@ -38,7 +38,7 @@ export const About = () => {
                 <Footprints className="w-6 h-6 text-[#527fb8]" />
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Rewarding Journey</h4>
+                <h4 className="font-semibold mb-2 text-[#27425e]">Rewarding Journey</h4>
                 <p className="text-[#27425e]">Turn your recovery sessions into opportunities to earn real rewards while improving your performance.</p>
               </div>
             </div>
@@ -48,7 +48,7 @@ export const About = () => {
                 <Heart className="w-6 h-6 text-[#527fb8]" />
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Community Support</h4>
+                <h4 className="font-semibold mb-2 text-[#27425e]">Community Support</h4>
                 <p className="text-[#27425e]">Join a community of runners who understand that proper recovery is key to achieving their goals.</p>
               </div>
             </div>
