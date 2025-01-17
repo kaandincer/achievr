@@ -11,9 +11,9 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0 flex items-center gap-2">
             <img 
-              src="/lovable-uploads/d7c703c9-dd83-4c50-8e42-38dce168cd09.png" 
+              src="/lovable-uploads/2afe7176-8fe3-4c1a-a71f-841123815e50.png" 
               alt="Plio Logo" 
-              className="h-6 w-6"
+              className="h-8 w-8"
             />
             <span className="text-2xl font-bold text-[#527fb8]">Plio</span>
           </div>
