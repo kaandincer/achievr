@@ -120,7 +120,7 @@ export const SignupDialog = () => {
           </div>
           <Button
             type="submit"
-            className="w-full bg-[#9b87f5] hover:bg-[#8b77e5] text-white"
+            className="w-full bg-[#527fb8] hover:bg-[#27425e] text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing up..." : "Join Waitlist"}
