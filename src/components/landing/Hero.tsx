@@ -16,11 +16,11 @@ export const Hero = () => {
     <section className="min-h-[80vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-white" role="banner">
       <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-up">
         <header className="space-y-4">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#527fb8]">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#27425e]">
             Make Recovery{" "}
-            <span className="text-[#27425e]">Fun & Rewarding</span>
+            <span className="text-[#527fb8]">Fun & Rewarding</span>
           </h1>
-          <p className="text-lg sm:text-xl text-[#527fb8] max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-[#27425e] max-w-2xl mx-auto">
             The first mobile app that makes post-run stretching engaging and rewarding.
             Win real cash prizes while optimizing your recovery with AI-powered routines.
           </p>
@@ -28,7 +28,7 @@ export const Hero = () => {
         <nav className="flex flex-col sm:flex-row gap-4 justify-center" aria-label="Primary">
           <Button
             size="lg"
-            className="bg-[#527fb8] hover:bg-[#27425e] text-white transition-all duration-300"
+            className="bg-[#27425e] hover:bg-[#527fb8] text-white transition-all duration-300"
             onClick={openSignupDialog}
             aria-label="Join Plio Waitlist"
           >
@@ -38,7 +38,7 @@ export const Hero = () => {
           <Button
             size="lg"
             variant="outline"
-            className="border-[#527fb8] text-[#527fb8] hover:bg-[#527fb8] hover:text-white"
+            className="border-[#27425e] text-[#27425e] hover:bg-[#27425e] hover:text-white"
             onClick={scrollToFeatures}
             aria-label="Learn More about Plio"
           >
