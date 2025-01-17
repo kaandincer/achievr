@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { create } from "zustand";
@@ -25,10 +25,18 @@ export const useSignupDialog = create<SignupDialogStore>((set) => ({
   closeSignupDialog: () => set({ isOpen: false }),
 }));
 
+const motivationOptions = [
+  { id: "cash-rewards", label: "Cash Rewards" },
+  { id: "gamification", label: "Gamification" },
+  { id: "ai-routines", label: "Shorter, efficient, and personalized routines through AI" },
+  { id: "social-community", label: "Social community (online group stretches)" },
+  { id: "progress-tracking", label: "Tracking progress and recovery levels" },
+];
+
 export const SignupDialog = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [excitement, setExcitement] = useState("");
+  const [selectedMotivations, setSelectedMotivations] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { isOpen, closeSignupDialog } = useSignupDialog();
@@ -42,9 +50,9 @@ export const SignupDialog = () => {
         .from('signups')
         .insert([
           { 
-            "Name": name,
-            "Email": email,
-            "Why Achievr?": excitement 
+            Name: name,
+            Email: email,
+            motivation: selectedMotivations
           }
         ]);
 
@@ -58,7 +66,7 @@ export const SignupDialog = () => {
       closeSignupDialog();
       setEmail("");
       setName("");
-      setExcitement("");
+      setSelectedMotivations([]);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -106,17 +114,33 @@ export const SignupDialog = () => {
               required
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="excitement" className="text-sm font-medium">
-              What excites you most about Plio? (Optional)
+          <div className="space-y-3">
+            <label className="text-sm font-medium">
+              What would motivate you to stretch and keep up with recovery alongside running?
             </label>
-            <Textarea
-              id="excitement"
-              placeholder="Share what brings you to Plio..."
-              value={excitement}
-              onChange={(e) => setExcitement(e.target.value)}
-              className="min-h-[100px]"
-            />
+            <div className="space-y-2">
+              {motivationOptions.map((option) => (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={option.id}
+                    checked={selectedMotivations.includes(option.label)}
+                    onCheckedChange={(checked) => {
+                      setSelectedMotivations(prev =>
+                        checked
+                          ? [...prev, option.label]
+                          : prev.filter(item => item !== option.label)
+                      );
+                    }}
+                  />
+                  <label
+                    htmlFor={option.id}
+                    className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
           <Button
             type="submit"

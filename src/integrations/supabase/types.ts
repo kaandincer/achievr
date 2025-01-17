@@ -56,22 +56,22 @@ export type Database = {
           created_at: string
           Email: string | null
           id: number
+          motivation: string[] | null
           Name: string | null
-          "Why Achievr?": string | null
         }
         Insert: {
           created_at?: string
           Email?: string | null
           id?: number
+          motivation?: string[] | null
           Name?: string | null
-          "Why Achievr?"?: string | null
         }
         Update: {
           created_at?: string
           Email?: string | null
           id?: number
+          motivation?: string[] | null
           Name?: string | null
-          "Why Achievr?"?: string | null
         }
         Relationships: []
       }
