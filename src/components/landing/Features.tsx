@@ -1,46 +1,58 @@
-import { CheckCircle, Target, Trophy, Users } from "lucide-react";
+import { Trophy, Sparkles, Gamepad, Users, Timer, Activity } from "lucide-react";
 
 const features = [
   {
-    icon: Target,
-    title: "Smart Goal Setting",
+    icon: Trophy,
+    title: "Win Real Rewards",
     description:
-      "Set clear, achievable goals with AI-powered guidance that helps you break down big objectives into manageable steps.",
+      "Earn points for consistent stretching and win cash prizes in monthly contests. Turn your recovery routine into real rewards.",
   },
   {
-    icon: CheckCircle,
-    title: "Daily Accountability",
+    icon: Sparkles,
+    title: "AI-Powered Recovery",
     description:
-      "Stay on track with intelligent check-ins and progress monitoring that adapts to your unique journey.",
+      "Get personalized stretching routines based on your run intensity and recovery needs, optimized by AI.",
+  },
+  {
+    icon: Gamepad,
+    title: "Fun Gamification",
+    description:
+      "Build virtual characters, complete storylines, and play stretching-based games that make recovery entertaining.",
   },
   {
     icon: Users,
-    title: "Community Support",
+    title: "Social Stretching",
     description:
-      "Connect with like-minded individuals who share your goals and motivate each other to succeed.",
+      "Join group stretches and compete with friends. Make recovery a social and motivating experience.",
   },
   {
-    icon: Trophy,
-    title: "Achievement Tracking",
+    icon: Timer,
+    title: "Multi-task Mode",
     description:
-      "Celebrate your progress with detailed analytics and meaningful milestones that showcase your journey.",
+      "Efficiently combine stretching with other activities. Make the most of your recovery time.",
+  },
+  {
+    icon: Activity,
+    title: "Progress Tracking",
+    description:
+      "Monitor your recovery journey with detailed analytics and see how consistent stretching improves your performance.",
   },
 ];
 
 export const Features = () => {
   return (
-    <section id="features-section" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50" aria-labelledby="features-heading">
+    <section id="features-section" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F2FCE2]" aria-labelledby="features-heading">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-16 animate-fade-up">
           <h2 id="features-heading" className="text-3xl sm:text-4xl font-bold mb-4">
-            Empowering Your Journey
+            Recovery Reimagined
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Our AI-powered platform provides the tools and support you need to turn
-            your aspirations into accomplishments.
+            Plio transforms your post-run recovery into an engaging experience that
+            rewards you for taking care of your body.
           </p>
         </header>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" role="list">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list">
           {features.map((feature, index) => (
             <article
               key={feature.title}
@@ -48,7 +60,7 @@ export const Features = () => {
               style={{ animationDelay: `${index * 100}ms` }}
               role="listitem"
             >
-              <feature.icon className="h-12 w-12 text-sage-500 mb-4" aria-hidden="true" />
+              <feature.icon className="h-12 w-12 text-[#9b87f5] mb-4" aria-hidden="true" />
               <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
               <p className="text-gray-600">{feature.description}</p>
             </article>

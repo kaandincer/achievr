@@ -52,7 +52,7 @@ export const SignupDialog = () => {
 
       toast({
         title: "Thanks for signing up!",
-        description: "We'll notify you as soon as Achievr launches.",
+        description: "We'll notify you as soon as Plio launches.",
       });
       
       closeSignupDialog();
@@ -77,7 +77,7 @@ export const SignupDialog = () => {
         <DialogHeader>
           <DialogTitle className="text-2xl">Join the Waitlist</DialogTitle>
           <DialogDescription className="text-lg">
-            Be among the first to experience Achievr when we launch!
+            Be among the first runners to experience Plio when we launch!
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -108,11 +108,11 @@ export const SignupDialog = () => {
           </div>
           <div className="space-y-2">
             <label htmlFor="excitement" className="text-sm font-medium">
-              What excites you most about Achievr? (Optional)
+              What excites you most about Plio? (Optional)
             </label>
             <Textarea
               id="excitement"
-              placeholder="Share what brings you to Achievr..."
+              placeholder="Share what brings you to Plio..."
               value={excitement}
               onChange={(e) => setExcitement(e.target.value)}
               className="min-h-[100px]"
@@ -120,7 +120,7 @@ export const SignupDialog = () => {
           </div>
           <Button
             type="submit"
-            className="w-full bg-sage-500 hover:bg-sage-600 text-white"
+            className="w-full bg-[#9b87f5] hover:bg-[#8b77e5] text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing up..." : "Join Waitlist"}

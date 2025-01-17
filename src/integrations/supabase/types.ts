@@ -75,6 +75,36 @@ export type Database = {
         }
         Relationships: []
       }
+      smart_goal_conversations: {
+        Row: {
+          conversation_history: Json | null
+          created_at: string
+          current_step: string
+          id: string
+          original_goal: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          conversation_history?: Json | null
+          created_at?: string
+          current_step: string
+          id?: string
+          original_goal: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          conversation_history?: Json | null
+          created_at?: string
+          current_step?: string
+          id?: string
+          original_goal?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
