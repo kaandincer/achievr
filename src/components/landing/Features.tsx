@@ -41,13 +41,13 @@ const features = [
 
 export const Features = () => {
   return (
-    <section id="features-section" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#4267B2]/10" aria-labelledby="features-heading">
+    <section id="features-section" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#f9f8f6]" aria-labelledby="features-heading">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-16 animate-fade-up">
-          <h2 id="features-heading" className="text-3xl sm:text-4xl font-bold mb-4 text-[#4267B2]">
+          <h2 id="features-heading" className="text-3xl sm:text-4xl font-bold mb-4 text-[#27425e]">
             Recovery Reimagined
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-[#27425e]/80 max-w-2xl mx-auto">
             Plio transforms your post-run recovery into an engaging experience that
             rewards you for taking care of your body.
           </p>
@@ -60,9 +60,9 @@ export const Features = () => {
               style={{ animationDelay: `${index * 100}ms` }}
               role="listitem"
             >
-              <feature.icon className="h-12 w-12 text-[#4267B2] mb-4" aria-hidden="true" />
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
+              <feature.icon className="h-12 w-12 text-[#527fb8] mb-4" aria-hidden="true" />
+              <h3 className="text-xl font-semibold mb-2 text-[#27425e]">{feature.title}</h3>
+              <p className="text-[#27425e]/80">{feature.description}</p>
             </article>
           ))}
         </div>
